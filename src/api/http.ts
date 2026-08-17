@@ -5,10 +5,22 @@ export interface ApiResponse<T> {
   [key: string]: unknown
 }
 
-const API_PREFIX = '/api'
+// 部署到 Spring Boot 后整个应用挂在 server.servlet.context-path=/ia 下，
+// import.meta.env.BASE_URL 会自动等于 vite.config.ts 里配置的 base（'/ia/'），本地开发时也是同一个值
+const BASE = import.meta.env.BASE_URL // 形如 '/ia/'，一定以斜杠结尾
+const API_PREFIX = `${BASE}api` // '/ia/api'
+
+// location.pathname / location.href 是浏览器原生 API，不会自动帮你带上 /ia 前缀，
+// 所以凡是要跟路由路径比较或者做整页跳转的地方，都要先把 /ia 这段去掉/加上，手动处理
+function stripBase(pathname: string): string {
+  return pathname.startsWith(BASE) ? '/' + pathname.slice(BASE.length) : pathname
+}
+function withBase(path: string): string {
+  return BASE.slice(0, -1) + path // BASE 以 '/' 结尾，path 以 '/' 开头，拼接时去掉一个斜杠
+}
 
 async function request<T>(url: string, options: RequestInit = {}): Promise<T> {
-  const isMobile = window.location.pathname.startsWith('/m/')
+  const isMobile = stripBase(window.location.pathname).startsWith('/m/')
   const token = isMobile
     ? window.localStorage.getItem('mobile_access_token')
     : (window.localStorage.getItem('access_token') || window.localStorage.getItem('token'))
@@ -24,7 +36,7 @@ async function request<T>(url: string, options: RequestInit = {}): Promise<T> {
   if (response.status === 401) {
     window.localStorage.removeItem(isMobile ? 'mobile_access_token' : 'access_token')
     window.localStorage.removeItem(isMobile ? 'mobile_login_user' : 'login_user')
-    const loginPath = isMobile ? '/m/login' : '/login'
+    const loginPath = withBase(isMobile ? '/m/login' : '/login')
     if (location.pathname !== loginPath) location.href = loginPath
     throw new Error('登录已过期')
   }
@@ -45,7 +57,7 @@ async function request<T>(url: string, options: RequestInit = {}): Promise<T> {
 }
 
 async function downloadFile(url: string, params?: Record<string, unknown>): Promise<{ blob: Blob; filename?: string }> {
-  const isMobile = window.location.pathname.startsWith('/m/')
+  const isMobile = stripBase(window.location.pathname).startsWith('/m/')
   const token = isMobile
     ? window.localStorage.getItem('mobile_access_token')
     : (window.localStorage.getItem('access_token') || window.localStorage.getItem('token'))
@@ -66,7 +78,7 @@ async function downloadFile(url: string, params?: Record<string, unknown>): Prom
   if (response.status === 401) {
     window.localStorage.removeItem(isMobile ? 'mobile_access_token' : 'access_token')
     window.localStorage.removeItem(isMobile ? 'mobile_login_user' : 'login_user')
-    const loginPath = isMobile ? '/m/login' : '/login'
+    const loginPath = withBase(isMobile ? '/m/login' : '/login')
     if (location.pathname !== loginPath) location.href = loginPath
     throw new Error('登录已过期')
   }

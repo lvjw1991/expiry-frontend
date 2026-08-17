@@ -14,9 +14,11 @@ import MobileExpiry from './views/mobile/MobileExpiry.vue'
 import MobileExpiryDetail from './views/mobile/MobileExpiryDetail.vue'
 
 const router = createRouter({
-  history: createWebHistory(),
+  // 和 vite.config.ts 的 base 保持一致，import.meta.env.BASE_URL 会自动等于那个值（这里是 '/ia/'）
+  history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
     { path: '/login', component: Login, meta: { public: true, platform: 'pc', layout: 'none' } },
+    { path: '/m', component: MobileLogin, meta: { public: true, platform: 'mobile', layout: 'mobile-login' } },
     { path: '/m/login', component: MobileLogin, meta: { public: true, platform: 'mobile', layout: 'mobile-login' } },
     { path: '/', redirect: '/receiving-orders' },
     { path: '/receiving-orders', component: ReceivingOrderList, meta: { layout: 'desktop', platform: 'pc', requiresAuth: true } },
