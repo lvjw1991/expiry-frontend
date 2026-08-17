@@ -14,7 +14,7 @@ export default defineConfig({
     proxy: {
       // 前端代码里请求的是 /ia/api/xxx（跟生产环境保持一致），开发时转发到本地后端的 /ia/api/xxx
       '/ia/api': {
-        target: 'http://localhost:80',
+        target: 'http://localhost:443',
         changeOrigin: true,
         secure: false
       }
