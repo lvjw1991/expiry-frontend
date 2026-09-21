@@ -18,6 +18,9 @@ const addSaving = ref(false)
 const confirmVisible = ref(false)
 const confirmSaving = ref(false)
 const confirmRow = ref<ExpiryRecord>()
+const processVisible = ref(false)
+const processSaving = ref(false)
+const processRow = ref<ExpiryRecord>()
 
 const query = reactive<{
   pageNum: number
@@ -30,8 +33,9 @@ const query = reactive<{
   category: string
 }>({ pageNum: 0, pageSize: 20, barcode: '', expireDateFrom: '', expireDateTo: '', confirmStatus: undefined, processStatus: undefined, category: '' })
 
-const editForm = reactive({ barcode: '', expiryDate: '', category: '', productName: '' })
-const addForm = reactive({ barcode: '', expiryDate: '', category: '', productName: '' })
+const editForm = reactive({ barcode: '', expiryDate: '', category: '', stock: 0 })
+const addForm = reactive({ barcode: '', expiryDate: '', category: '', stock: 0 })
+const processForm = reactive<{ status: 'NORMAL'|'PROMOTE'|'DAMAGE'; remark: string; stock: number }>({ status: 'NORMAL', remark: '', stock: 0 })
 const confirmForm = reactive<{ status: 'CONFIRM' | 'NOT_FOUND'; stock: number }>({ status: 'CONFIRM', stock: 0 })
 const importInput=ref<HTMLInputElement>()
 const importing=ref(false)
@@ -88,24 +92,38 @@ async function submitConfirm() {
   } catch (e: any) { ElMessage.error(e.message || '确认失败') } finally { confirmSaving.value = false }
 }
 
-async function process(row: ExpiryRecord, status: 'NORMAL'|'PROMOTE'|'DAMAGE') {
+function openProcess(row: ExpiryRecord) {
+  processRow.value = row
+  processForm.status = row.processStatus === 'NORMAL' || row.processStatus === 'PROMOTE' || row.processStatus === 'DAMAGE'
+    ? row.processStatus
+    : 'NORMAL'
+  processForm.remark = row.processRemark || ''
+  processForm.stock = row.stock ?? 0
+  processVisible.value = true
+}
+
+async function submitProcess() {
+  if (!processRow.value) return
+  processSaving.value = true
   try {
-    await ElMessageBox.confirm(`确定将该记录处理为“${processLabel(status)}”吗？`, '处理确认', { type: 'warning' })
-    await processExpiryRecord(row.id, status)
+    await processExpiryRecord(processRow.value.id, processForm.status, processForm.remark, processForm.stock)
     ElMessage.success('处理成功')
+    processVisible.value = false
     await load()
   } catch (e: any) {
-    if (e !== 'cancel' && e !== 'close') ElMessage.error(e.message || '处理失败')
+    ElMessage.error(e.message || '处理失败')
+  } finally {
+    processSaving.value = false
   }
 }
 
 function openAdd() {
-  Object.assign(addForm, { barcode: '', expiryDate: '', category: '', productName: '' })
+  Object.assign(addForm, { barcode: '', expiryDate: '', category: '', stock: 0 })
   addVisible.value = true
 }
 
 async function submitAdd() {
-  if (!addForm.barcode.trim() || !addForm.expiryDate) return ElMessage.warning('Barcode 和有效期不能为空')
+  if (!addForm.barcode.trim() || !addForm.expiryDate || !addForm.category) return ElMessage.warning('Barcode、有效期和类型不能为空')
   addSaving.value = true
   try {
     await createExpiryRecord({ ...addForm, barcode: addForm.barcode.trim() })
@@ -120,12 +138,12 @@ function openEdit(row: ExpiryRecord) {
   editForm.barcode = row.barcode || ''
   editForm.expiryDate = row.expiryDate || ''
   editForm.category = row.category || ''
-  editForm.productName = row.productName || ''
+  editForm.stock = row.stock ?? 0
   editVisible.value = true
 }
 
 async function submitEdit() {
-  if (!editId.value || !editForm.barcode || !editForm.expiryDate) return ElMessage.warning('Barcode 和有效期不能为空')
+  if (!editId.value || !editForm.barcode || !editForm.expiryDate || !editForm.category) return ElMessage.warning('Barcode、有效期和类型不能为空')
   editSaving.value = true
   try {
     await updateExpiryRecord(editId.value, { ...editForm })
@@ -171,15 +189,11 @@ onMounted(load)
         <el-table-column label="图片" width="80"><template #default="{row}"><el-image v-if="row.imgUrl" :src="row.imgUrl" style="width:40px;height:40px" fit="cover"/><span v-else>-</span></template></el-table-column>
         <el-table-column label="确认状态" width="100"><template #default="{row}"><el-tag :type="confirmTag(row.confirmStatus)">{{confirmLabel(row.confirmStatus)}}</el-tag></template></el-table-column>
         <el-table-column label="处理状态" width="110"><template #default="{row}"><el-tag :type="processTag(row.processStatus)">{{processLabel(row.processStatus)}}</el-tag></template></el-table-column>
-        <el-table-column label="操作" width="360" fixed="right">
+        <el-table-column label="操作" width="195" fixed="right">
           <template #default="{row}">
             <el-button link type="primary" @click="openDetail(row)">详情</el-button>
             <el-button v-if="row.confirmStatus === 'UNCONFIRM'" link type="warning" @click="openConfirm(row)">确认</el-button>
-            <template v-if="row.confirmStatus !== 'UNCONFIRM' && row.processStatus === 'UNPROCESS'">
-              <el-button link type="success" @click="process(row,'NORMAL')">正常销售</el-button>
-              <el-button link type="warning" @click="process(row,'PROMOTE')">打折</el-button>
-              <el-button link type="danger" @click="process(row,'DAMAGE')">报损</el-button>
-            </template>
+            <el-button v-if="row.confirmStatus !== 'UNCONFIRM'" link type="primary" @click="openProcess(row)">处理</el-button>
             <el-button link type="primary" @click="openEdit(row)">修改</el-button>
             <el-button link type="danger" @click="remove(row)">删除</el-button>
           </template>
@@ -187,6 +201,23 @@ onMounted(load)
       </el-table>
       <div class="pagination"><el-pagination :current-page="query.pageNum+1" :page-size="query.pageSize" :total="total" layout="total, sizes, prev, pager, next, jumper" :page-sizes="[10,20,50]" @current-change="(p:number)=>{query.pageNum=p-1;load()}" @size-change="(s:number)=>{query.pageSize=s;query.pageNum=0;load()}"/></div>
     </el-card>
+
+    <el-dialog v-model="processVisible" title="处理有效期记录" width="430px">
+      <el-form label-width="90px">
+        <el-form-item label="Barcode">{{processRow?.barcode}}</el-form-item>
+        <el-form-item label="有效期">{{processRow?.expiryDate}}</el-form-item>
+        <el-form-item label="库存"><el-input-number v-model="processForm.stock" :min="0" :precision="0"/></el-form-item>
+        <el-form-item label="处理方式">
+          <el-radio-group v-model="processForm.status">
+            <el-radio value="NORMAL">正常销售</el-radio>
+            <el-radio value="PROMOTE">打折</el-radio>
+            <el-radio value="DAMAGE">报损</el-radio>
+          </el-radio-group>
+        </el-form-item>
+        <el-form-item label="备注"><el-input v-model="processForm.remark" type="textarea" :rows="3" maxlength="500" show-word-limit/></el-form-item>
+      </el-form>
+      <template #footer><el-button @click="processVisible=false">取消</el-button><el-button type="primary" :loading="processSaving" @click="submitProcess">保存</el-button></template>
+    </el-dialog>
 
     <el-dialog v-model="confirmVisible" title="确认有效期记录" width="430px">
       <el-form label-width="90px">
@@ -202,8 +233,8 @@ onMounted(load)
       <el-form label-width="90px">
         <el-form-item label="Barcode" required><el-input v-model="addForm.barcode"/></el-form-item>
         <el-form-item label="有效期" required><el-date-picker v-model="addForm.expiryDate" type="date" value-format="YYYY-MM-DD"/></el-form-item>
-        <el-form-item label="类型"><el-select v-model="addForm.category" clearable style="width:100%"><el-option v-for="x in CATEGORY_OPTIONS" :key="x" :label="x" :value="x"/></el-select></el-form-item>
-        <el-form-item label="商品名称"><el-input v-model="addForm.productName"/></el-form-item>
+        <el-form-item label="类型" required><el-select v-model="addForm.category" clearable style="width:100%"><el-option v-for="x in CATEGORY_OPTIONS" :key="x" :label="x" :value="x"/></el-select></el-form-item>
+        <el-form-item label="库存"><el-input-number v-model="addForm.stock" :min="0" :precision="0"/></el-form-item>
       </el-form>
       <template #footer><el-button @click="addVisible=false">取消</el-button><el-button type="primary" :loading="addSaving" @click="submitAdd">保存</el-button></template>
     </el-dialog>
@@ -212,8 +243,8 @@ onMounted(load)
       <el-form label-width="90px">
         <el-form-item label="Barcode" required><el-input v-model="editForm.barcode"/></el-form-item>
         <el-form-item label="有效期" required><el-date-picker v-model="editForm.expiryDate" type="date" value-format="YYYY-MM-DD"/></el-form-item>
-        <el-form-item label="类型"><el-select v-model="editForm.category" clearable style="width:100%"><el-option v-for="x in CATEGORY_OPTIONS" :key="x" :label="x" :value="x"/></el-select></el-form-item>
-        <el-form-item label="商品名称"><el-input v-model="editForm.productName"/></el-form-item>
+        <el-form-item label="类型" required><el-select v-model="editForm.category" clearable style="width:100%"><el-option v-for="x in CATEGORY_OPTIONS" :key="x" :label="x" :value="x"/></el-select></el-form-item>
+        <el-form-item label="库存"><el-input-number v-model="editForm.stock" :min="0" :precision="0"/></el-form-item>
       </el-form>
       <template #footer><el-button @click="editVisible=false">取消</el-button><el-button type="primary" :loading="editSaving" @click="submitEdit">保存</el-button></template>
     </el-dialog>

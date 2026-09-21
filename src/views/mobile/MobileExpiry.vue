@@ -30,16 +30,16 @@ const query = reactive<{confirmStatus?:ConfirmStatus;processStatus?:ProcessStatu
 
 const addVisible = ref(false)
 const addSaving = ref(false)
-const addForm = reactive({ barcode: '', expiryDate: '', category: '', productName: '' })
+const addForm = reactive({ barcode: '', expiryDate: '', category: '', stock: 0 })
 const scannerRef = ref<InstanceType<typeof MobileBarcodeScanner>>()
 
 function openAdd() {
-  Object.assign(addForm, { barcode: '', expiryDate: '', category: '', productName: '' })
+  Object.assign(addForm, { barcode: '', expiryDate: '', category: '', stock: 0 })
   addVisible.value = true
 }
 function onScan(v: string) { addForm.barcode = v }
 async function submitAdd() {
-  if (!addForm.barcode.trim() || !addForm.expiryDate) return ElMessage.warning('Barcode 和有效期不能为空')
+  if (!addForm.barcode.trim() || !addForm.expiryDate || !addForm.category) return ElMessage.warning('Barcode、有效期和类型不能为空')
   addSaving.value = true
   try {
     await createExpiryRecord({ ...addForm, barcode: addForm.barcode.trim() })
@@ -187,15 +187,24 @@ onMounted(loadMonth)
   <div v-if="addVisible" class="mobile-modal-mask" @click.self="addVisible=false">
     <div class="mobile-modal-sheet">
       <div class="mobile-modal-header"><b>新增有效期记录</b><button @click="addVisible=false">×</button></div>
-      <div class="mobile-form-card">
-        <label>Barcode * <button class="scan-button" @click="scannerRef?.open()">📷 扫码</button></label>
-        <input v-model="addForm.barcode" placeholder="扫码或手动输入"/>
-        <label>有效期 *</label>
-        <input v-model="addForm.expiryDate" type="date"/>
-        <label>类型</label>
+      <div class="mobile-form-card expiry-add-form">
+        <div class="mobile-display-field">
+          <label>Barcode <span class="required-star">*</span></label>
+          <div class="mobile-display-row barcode-input-row">
+            <input v-model="addForm.barcode" class="mobile-inline-value-input" placeholder="扫码或手动输入"/>
+            <button class="mobile-icon-button" type="button" aria-label="扫码" @click="scannerRef?.open()">📷</button>
+          </div>
+        </div>
+        <div class="mobile-display-field">
+          <label>有效期 <span class="required-star">*</span></label>
+          <div class="mobile-display-row expiry-input-row">
+            <input v-model="addForm.expiryDate" class="mobile-display-date" type="date"/>
+          </div>
+        </div>
+        <label>类型 <span class="required-star">*</span></label>
         <select v-model="addForm.category"><option value="">请选择</option><option v-for="x in CATEGORY_OPTIONS" :key="x">{{x}}</option></select>
-        <label>商品名称</label>
-        <input v-model="addForm.productName" placeholder="选填"/>
+        <label>库存</label>
+        <input v-model.number="addForm.stock" type="number" min="0" step="1" placeholder="0"/>
       </div>
       <div class="mobile-modal-actions">
         <button @click="addVisible=false">取消</button>

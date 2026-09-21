@@ -117,3 +117,22 @@ body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-s
 .mobile-check-form .mobile-back-placeholder{display:none}
 
 .mobile-status-count{margin-left:4px;font-size:.85em;font-weight:600;}
+
+/* Mobile expiry v0.7.3: process inline in detail, no modal */
+.mobile-process-stock{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:8px 0 10px;padding-bottom:8px;border-bottom:1px solid #ebeef5}.mobile-process-stock label{font-size:13px;font-weight:600;color:#606266}.mobile-process-stock input{width:120px;height:40px;box-sizing:border-box;border:1px solid #dcdfe6;border-radius:8px;background:#fff;padding:0 10px;font-size:18px;text-align:right;outline:none}.mobile-process-options{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:8px 0}.mobile-process-options button{height:40px;border:1px solid #dcdfe6;border-radius:8px;background:#fff;color:#606266;font-size:14px}.mobile-process-options button.active{border-color:#409eff;background:#ecf5ff;color:#409eff;font-weight:600}.mobile-process-options button:disabled{opacity:.55}.mobile-process-remark{width:100%;box-sizing:border-box;border:1px solid #dcdfe6;border-radius:8px;background:#fff;padding:9px 10px;font-size:14px;line-height:1.5;resize:none;outline:none;margin:2px 0 8px}.expiry-add-form .mobile-display-field{margin-bottom:8px}.expiry-add-form .mobile-display-date{padding-left:0}.expiry-add-form .mobile-display-row{min-height:48px}.expiry-add-form .mobile-inline-value-input{height:48px}
+
+.primary-action{
+  width:100%;
+  height:44px;
+  border:1px solid #dcdfe6;
+  border-radius:8px;
+  background:#67c23a;
+  color:#fff;
+  font-size:14px;
+  cursor:pointer;
+  box-sizing:border-box;
+}
+
+.primary-action:disabled{
+  opacity:.5;
+}
