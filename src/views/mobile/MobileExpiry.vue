@@ -2,10 +2,12 @@
 import { computed, onMounted, reactive, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { deleteExpiryRecord, getExpiryRecordsCalendar } from '../../api/expiryRecord'
+import { createExpiryRecord, deleteExpiryRecord, getExpiryRecordsCalendar } from '../../api/expiryRecord'
 import type { ConfirmStatus, ExpiryRecord, ProcessStatus } from '../../api/types'
 import MobileNav from './MobileNav.vue'
+import MobileBarcodeScanner from './MobileBarcodeScanner.vue'
 
+import { CATEGORY_OPTIONS } from '../../constants/productOptions'
 const route = useRoute()
 const router = useRouter()
 const today = new Date()
@@ -25,7 +27,29 @@ const query = reactive<{confirmStatus?:ConfirmStatus;processStatus?:ProcessStatu
   processStatus: (typeof route.query.processStatus === 'string' ? route.query.processStatus : undefined) as ProcessStatus|undefined,
   category: typeof route.query.category === 'string' ? route.query.category : ''
 })
-const categoryOptions=['Fresh','Frozen','Dry','Seasoning','Drink','Instant Noodle','Snack']
+
+const addVisible = ref(false)
+const addSaving = ref(false)
+const addForm = reactive({ barcode: '', expiryDate: '', category: '', productName: '' })
+const scannerRef = ref<InstanceType<typeof MobileBarcodeScanner>>()
+
+function openAdd() {
+  Object.assign(addForm, { barcode: '', expiryDate: '', category: '', productName: '' })
+  addVisible.value = true
+}
+function onScan(v: string) { addForm.barcode = v }
+async function submitAdd() {
+  if (!addForm.barcode.trim() || !addForm.expiryDate) return ElMessage.warning('Barcode 和有效期不能为空')
+  addSaving.value = true
+  try {
+    await createExpiryRecord({ ...addForm, barcode: addForm.barcode.trim() })
+    ElMessage.success('新增成功')
+    addVisible.value = false
+    await loadMonth()
+  } catch (e: any) {
+    ElMessage.error(e.message || '新增失败')
+  } finally { addSaving.value = false }
+}
 
 const weeks=computed(()=>{
   const y=month.value.getFullYear(),m=month.value.getMonth()
@@ -113,7 +137,7 @@ onMounted(loadMonth)
 
 <template>
 <div class="mobile-page">
-  <div class="mobile-topbar"><b>📅 有效期</b></div>
+  <div class="mobile-topbar"><b>📅 有效期</b><button class="mobile-topbar-action" @click="openAdd">＋ 新增</button></div>
   <main class="mobile-content">
     <div class="today-expiry"><span>今日到期</span><strong>{{todayCount}}</strong><small>件</small></div>
 
@@ -140,7 +164,7 @@ onMounted(loadMonth)
     <div v-if="filterOpen" class="mobile-filter-panel">
       <div class="filter-field"><label>确认状态</label><select v-model="query.confirmStatus" @change="refresh"><option :value="undefined">全部</option><option value="UNCONFIRM">未确认</option><option value="CONFIRM">已确认</option><option value="NOT_FOUND">未找到</option></select></div>
       <div class="filter-field"><label>处理状态</label><select v-model="query.processStatus" @change="refresh"><option :value="undefined">全部</option><option value="UNPROCESS">未处理</option><option value="NORMAL">正常销售</option><option value="PROMOTE">促销</option><option value="DAMAGE">报损</option></select></div>
-      <div class="filter-field"><label>Category</label><select v-model="query.category" @change="refresh"><option value="">全部</option><option v-for="x in categoryOptions" :key="x" :value="x">{{x}}</option></select></div>
+      <div class="filter-field"><label>Category</label><select v-model="query.category" @change="refresh"><option value="">全部</option><option v-for="x in CATEGORY_OPTIONS" :key="x" :value="x">{{x}}</option></select></div>
       <button v-if="hasFilters" class="filter-reset" @click="resetFilters">清除筛选</button>
     </div>
 
@@ -159,6 +183,28 @@ onMounted(loadMonth)
       </div>
     </button>
   </main>
+
+  <div v-if="addVisible" class="mobile-modal-mask" @click.self="addVisible=false">
+    <div class="mobile-modal-sheet">
+      <div class="mobile-modal-header"><b>新增有效期记录</b><button @click="addVisible=false">×</button></div>
+      <div class="mobile-form-card">
+        <label>Barcode * <button class="scan-button" @click="scannerRef?.open()">📷 扫码</button></label>
+        <input v-model="addForm.barcode" placeholder="扫码或手动输入"/>
+        <label>有效期 *</label>
+        <input v-model="addForm.expiryDate" type="date"/>
+        <label>类型</label>
+        <select v-model="addForm.category"><option value="">请选择</option><option v-for="x in CATEGORY_OPTIONS" :key="x">{{x}}</option></select>
+        <label>商品名称</label>
+        <input v-model="addForm.productName" placeholder="选填"/>
+      </div>
+      <div class="mobile-modal-actions">
+        <button @click="addVisible=false">取消</button>
+        <button class="primary" :disabled="addSaving" @click="submitAdd">{{addSaving?'保存中...':'保存'}}</button>
+      </div>
+    </div>
+  </div>
+  <MobileBarcodeScanner ref="scannerRef" @scanned="onScan"/>
+
   <MobileNav/>
 </div>
 </template>

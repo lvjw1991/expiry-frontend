@@ -4,12 +4,13 @@ import { useRoute, useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { confirmExpiryRecord, deleteExpiryRecord, getExpiryRecord, processExpiryRecord, updateExpiryRecord } from '../../api/expiryRecord'
 import type { ExpiryRecord } from '../../api/types'
+import BarcodeImage from '../../components/BarcodeImage.vue'
 
+import { CATEGORY_OPTIONS } from '../../constants/productOptions'
 const route = useRoute(); const router = useRouter()
 const record = ref<ExpiryRecord>(); const loading=ref(false); const saving=ref(false)
 const editVisible=ref(false); const editForm=reactive({barcode:'',expiryDate:'',category:'',productName:''})
 const confirmVisible=ref(false); const confirmForm=reactive<{status:'CONFIRM'|'NOT_FOUND';stock:number}>({status:'CONFIRM',stock:0})
-const categoryOptions=['Fresh','Frozen','Dry','Seasoning','Drink','Instant Noodle','Snack']
 const id=Number(route.params.id)
 
 function confirmLabel(v?:string){return ({UNCONFIRM:'未确认',CONFIRM:'已确认',NOT_FOUND:'未找到'} as Record<string,string>)[v||'']||v||'-'}
@@ -36,6 +37,7 @@ onMounted(load)
       <el-descriptions-item label="有效期">{{record.expiryDate}}</el-descriptions-item><el-descriptions-item label="库存">{{record.stock}}</el-descriptions-item>
       <el-descriptions-item label="类型">{{record.category||'-'}}</el-descriptions-item><el-descriptions-item label="商品名称">{{record.productName||'-'}}</el-descriptions-item>
       <el-descriptions-item label="图片" :span="2"><el-image v-if="record.imgUrl" :src="record.imgUrl" style="width:100px;height:100px" fit="contain"/><span v-else>-</span></el-descriptions-item>
+      <el-descriptions-item label="条形码" :span="2"><BarcodeImage :value="record.barcode"/></el-descriptions-item>
       <el-descriptions-item label="确认状态"><el-tag>{{confirmLabel(record.confirmStatus)}}</el-tag></el-descriptions-item><el-descriptions-item label="确认时间">{{fmt(record.confirmTime)}}</el-descriptions-item>
       <el-descriptions-item label="处理状态"><el-tag>{{processLabel(record.processStatus)}}</el-tag></el-descriptions-item><el-descriptions-item label="处理时间">{{fmt(record.processTime)}}</el-descriptions-item>
       <el-descriptions-item label="处理备注" :span="2">{{record.processRemark||'-'}}</el-descriptions-item>
@@ -43,6 +45,6 @@ onMounted(load)
   </el-card>
 
   <el-dialog v-model="confirmVisible" title="确认有效期记录" width="430px"><el-form label-width="90px"><el-form-item label="库存"><el-input-number v-model="confirmForm.stock" :min="0" :precision="0"/></el-form-item><el-form-item label="确认结果"><el-radio-group v-model="confirmForm.status"><el-radio value="CONFIRM">确认存在</el-radio><el-radio value="NOT_FOUND">未找到</el-radio></el-radio-group></el-form-item></el-form><template #footer><el-button @click="confirmVisible=false">取消</el-button><el-button type="primary" :loading="saving" @click="submitConfirm">确定</el-button></template></el-dialog>
-  <el-dialog v-model="editVisible" title="修改有效期记录" width="520px"><el-form label-width="90px"><el-form-item label="Barcode" required><el-input v-model="editForm.barcode"/></el-form-item><el-form-item label="有效期" required><el-date-picker v-model="editForm.expiryDate" type="date" value-format="YYYY-MM-DD"/></el-form-item><el-form-item label="类型"><el-select v-model="editForm.category" clearable style="width:100%"><el-option v-for="x in categoryOptions" :key="x" :label="x" :value="x"/></el-select></el-form-item><el-form-item label="商品名称"><el-input v-model="editForm.productName"/></el-form-item></el-form><template #footer><el-button @click="editVisible=false">取消</el-button><el-button type="primary" :loading="saving" @click="submitEdit">保存</el-button></template></el-dialog>
+  <el-dialog v-model="editVisible" title="修改有效期记录" width="520px"><el-form label-width="90px"><el-form-item label="Barcode" required><el-input v-model="editForm.barcode"/></el-form-item><el-form-item label="有效期" required><el-date-picker v-model="editForm.expiryDate" type="date" value-format="YYYY-MM-DD"/></el-form-item><el-form-item label="类型"><el-select v-model="editForm.category" clearable style="width:100%"><el-option v-for="x in CATEGORY_OPTIONS" :key="x" :label="x" :value="x"/></el-select></el-form-item><el-form-item label="商品名称"><el-input v-model="editForm.productName"/></el-form-item></el-form><template #footer><el-button @click="editVisible=false">取消</el-button><el-button type="primary" :loading="saving" @click="submitEdit">保存</el-button></template></el-dialog>
 </div>
 </template>

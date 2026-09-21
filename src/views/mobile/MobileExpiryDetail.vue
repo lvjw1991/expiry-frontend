@@ -5,6 +5,7 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import { confirmExpiryRecord, getExpiryRecord, processExpiryRecord } from '../../api/expiryRecord'
 import type { ConfirmStatus, ExpiryRecord } from '../../api/types'
 import MobileNav from './MobileNav.vue'
+import BarcodeImage from '../../components/BarcodeImage.vue'
 
 const route=useRoute(); const router=useRouter(); const id=Number(route.params.id)
 const record=ref<ExpiryRecord>(); const loading=ref(false); const saving=ref(false)
@@ -37,6 +38,10 @@ onMounted(load)
       <section class="mobile-detail-card">
         <h2>{{record.productName||'-'}}</h2>
         <div class="detail-grid"><div><span>Barcode</span><b>{{record.barcode}}</b></div><div><span>有效期</span><b>{{record.expiryDate}}</b></div><div><span>库存</span><b>{{record.stock}}</b></div><div><span>Category</span><b>{{record.category||'-'}}</b></div></div>
+      </section>
+      <section class="mobile-detail-card">
+        <h3>条形码</h3>
+        <BarcodeImage :value="record.barcode"/>
       </section>
       <section class="mobile-detail-card">
         <div class="detail-status-line"><span>确认状态</span><strong>{{confirmLabel(record.confirmStatus)}}</strong></div>
