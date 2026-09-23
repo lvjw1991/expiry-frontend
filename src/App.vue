@@ -33,6 +33,7 @@ function doLogout() {
         <el-menu-item index="/expiry-records"><el-icon><Calendar /></el-icon><span>有效期管理</span></el-menu-item>
         <el-menu-item index="/suppliers"><el-icon><Shop /></el-icon><span>供应商管理</span></el-menu-item>
         <el-menu-item index="/supplier-products"><el-icon><Goods /></el-icon><span>供应商商品</span></el-menu-item>
+        <el-menu-item index="/products"><el-icon><Goods /></el-icon><span>商品管理</span></el-menu-item>
       </el-menu>
     </el-aside>
 

@@ -41,7 +41,7 @@ const importInput=ref<HTMLInputElement>()
 const importing=ref(false)
 
 function chooseImport(){importInput.value?.click()}
-async function onImport(e:Event){const input=e.target as HTMLInputElement;const file=input.files?.[0];if(!file)return;importing.value=true;try{const r=await importExpiryRecords(file);ElMessage.success(r?.message||'库存导入成功');await load()}catch(e:any){ElMessage.error(e.message||'库存导入失败')}finally{importing.value=false;input.value=''}}
+async function onImport(e:Event){const input=e.target as HTMLInputElement;const file=input.files?.[0];if(!file)return;importing.value=true;try{const r=await importExpiryRecords(file);await ElMessageBox.alert(`<div style="line-height:2"><div><b>Success:</b> ${r?.success ?? 0}</div><div><b>Skip:</b> ${r?.skip ?? 0}</div></div>`, '库存导入完成', { dangerouslyUseHTMLString:true, confirmButtonText:'确定' });await load()}catch(e:any){ElMessage.error(e.message||'库存导入失败')}finally{importing.value=false;input.value=''}}
 
 async function load() {
   loading.value = true
