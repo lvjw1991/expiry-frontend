@@ -3,11 +3,12 @@ import { onMounted, reactive, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { Calendar, FullScreen } from '@element-plus/icons-vue'
-import { getReceivingOrder, getReceivingOrderItems, checkReceivingItem, createReceivingItem } from '../../api/receivingOrder'
+import { getReceivingOrder, getReceivingOrderItems, getReceivingOrderItem, checkReceivingItem, createReceivingItem } from '../../api/receivingOrder'
 import type { ReceivingOrder, ReceivingOrderItem } from '../../api/types'
 import MobileNav from './MobileNav.vue'
 import MobileBarcodeScanner from './MobileBarcodeScanner.vue'
 import { CATEGORY_OPTIONS, SUGAR_OPTIONS, isExpiryRequired } from '../../constants/productOptions'
+import DamageImageUpload from '../../components/DamageImageUpload.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -35,6 +36,8 @@ const form = reactive({
   total: undefined as number | undefined,
   actualQty: undefined as number | undefined,
   damageQty: 0 as number | undefined,
+  remark: '',
+  damageImgList: [] as string[],
   status: 'PASS' as 'PASS' | 'FAIL'
 })
 
@@ -47,7 +50,9 @@ const createForm = reactive({
   category: '',
   sugar: '',
   actualQty: undefined as number | undefined,
-  damageQty: 0 as number | undefined
+  damageQty: 0 as number | undefined,
+  remark: '',
+  damageImgList: [] as string[]
 })
 
 async function load() {
@@ -90,17 +95,24 @@ function setListStatus(v: 'UNCHECKED' | 'PASS' | 'FAIL') {
   load()
 }
 
-function pick(x: ReceivingOrderItem) {
-  selected.value = x
-  form.barcode = x.barcode || ''
-  form.expiryDates = x.expiryDate ? x.expiryDate.split(',').filter(Boolean) : []
-  form.newExpiry = ''
-  form.category = x.category || ''
-  form.sugar = x.sugar || ''
-  form.total = x.total
-  form.actualQty = x.actualQty
-  form.damageQty = x.damageQty ?? 0
-  form.status = x.checkStatus === 'FAIL' ? 'FAIL' : 'PASS'
+async function pick(x: ReceivingOrderItem) {
+  try {
+    const detail = await getReceivingOrderItem(x.id)
+    selected.value = detail
+    form.barcode = detail.barcode || ''
+    form.expiryDates = detail.expiryDate ? detail.expiryDate.split(',').filter(Boolean) : []
+    form.newExpiry = ''
+    form.category = detail.category || ''
+    form.sugar = detail.sugar || ''
+    form.total = detail.total
+    form.actualQty = detail.actualQty
+    form.damageQty = detail.damageQty ?? 0
+    form.remark = detail.remark || ''
+    form.damageImgList = detail.damageImgList ? [...detail.damageImgList] : []
+    form.status = detail.checkStatus === 'FAIL' ? 'FAIL' : 'PASS'
+  } catch (e: any) {
+    ElMessage.error(e.message || '加载商品详情失败')
+  }
 }
 
 function onScan(v: string) {
@@ -171,7 +183,9 @@ async function save() {
       expiryDate: form.expiryDates,
       category: form.category,
       sugar: form.category === 'Drink' ? form.sugar : undefined,
-      status: form.status
+      status: form.status,
+      remark: form.status === 'FAIL' ? (form.remark.trim() || undefined) : undefined,
+      damageImgList: form.status === 'FAIL' ? form.damageImgList : []
     })
     ElMessage.success('点货成功')
     selected.value = undefined
@@ -202,7 +216,9 @@ function openCreate() {
     category: '',
     sugar: '',
     actualQty: undefined,
-    damageQty: 0
+    damageQty: 0,
+    remark: '',
+    damageImgList: []
   })
   creating.value = true
   selected.value = undefined
@@ -228,7 +244,9 @@ async function submitCreate() {
       expiryDate: createForm.expiryDates,
       category: createForm.category,
       sugar: createForm.category === 'Drink' ? createForm.sugar : undefined,
-      status: 'FAIL'
+      status: 'FAIL',
+      remark: createForm.remark.trim() || undefined,
+      damageImgList: createForm.damageImgList
     })
     ElMessage.success('新增成功')
     creating.value = false
@@ -274,6 +292,7 @@ onMounted(load)
           <div>
             <div class="mobile-card-title">{{ item.productName || '-' }}</div>
             <div class="mobile-card-line mobile-check-item-code">货号：{{ item.supplierCode || '-' }}</div>
+            <div v-if="item.checkStatus==='PASS'" class="mobile-card-line mobile-check-item-bbd">BBD：{{ item.expiryDate || '-' }}</div>
           </div>
           <div class="mobile-check-item-qty">{{ item.orderQty ?? '-' }} 箱</div>
         </button>
@@ -350,6 +369,15 @@ onMounted(load)
             </div>
           </div>
 
+          <div v-if="form.status === 'FAIL'" class="mobile-check-field">
+            <label>备注</label>
+            <textarea v-model="form.remark" class="compact-input damage-remark" rows="3" maxlength="500" placeholder="请输入破损备注"></textarea>
+          </div>
+          <div v-if="form.status === 'FAIL'" class="mobile-check-field">
+            <label>破损图片</label>
+            <DamageImageUpload v-model="form.damageImgList" />
+          </div>
+
           <button class="mobile-check-save-button" :disabled="saving" @click="save">{{ saving ? '保存中...' : '确认点货' }}</button>
         </section>
       </div>
@@ -423,6 +451,15 @@ onMounted(load)
               <label>破损数 <span class="required-star">*</span></label>
               <input v-model.number="createForm.damageQty" type="number" min="0" class="compact-input" inputmode="numeric" />
             </div>
+          </div>
+
+          <div class="mobile-check-field">
+            <label>备注</label>
+            <textarea v-model="createForm.remark" class="compact-input damage-remark" rows="3" maxlength="500" placeholder="请输入破损备注"></textarea>
+          </div>
+          <div class="mobile-check-field">
+            <label>破损图片</label>
+            <DamageImageUpload v-model="createForm.damageImgList" />
           </div>
 
           <button class="mobile-check-save-button" :disabled="createSaving" @click="submitCreate">{{ createSaving ? '保存中...' : '确认新增' }}</button>

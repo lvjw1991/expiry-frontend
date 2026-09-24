@@ -133,6 +133,5 @@ body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-s
   box-sizing:border-box;
 }
 
-.primary-action:disabled{
-  opacity:.5;
-}
+/* Receiving check: BBD and damage upload */
+.item-bbd{display:block;margin-top:3px;color:#67c23a;font-size:12px;font-weight:500}.mobile-check-item-bbd{color:#67c23a;font-size:13px}.damage-remark{width:100%;box-sizing:border-box;resize:vertical}

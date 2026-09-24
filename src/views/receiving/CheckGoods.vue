@@ -2,8 +2,9 @@
 import { onMounted, reactive, ref, nextTick, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import { getReceivingOrder, getReceivingOrderItems, checkReceivingItem, createReceivingItem } from '../../api/receivingOrder'
+import { getReceivingOrder, getReceivingOrderItems, getReceivingOrderItem, checkReceivingItem, createReceivingItem } from '../../api/receivingOrder'
 import type { ReceivingOrder, ReceivingOrderItem } from '../../api/types'
+import DamageImageUpload from '../../components/DamageImageUpload.vue'
 
 import { CATEGORY_OPTIONS } from '../../constants/productOptions'
 const props = defineProps<{ id: string }>()
@@ -30,6 +31,8 @@ const form = reactive({
   expiryDates: [] as string[],
   category: '',
   sugar: '',
+  remark: '',
+  damageImgList: [] as string[],
   status: 'PASS' as 'UNCHECKED' | 'PASS' | 'FAIL'
 })
 
@@ -44,7 +47,9 @@ const createForm = reactive({
   damageQty: 0 as number | undefined,
   expiryDates: [] as string[],
   category: '',
-  sugar: ''
+  sugar: '',
+  remark: '',
+  damageImgList: [] as string[]
 })
 const createNewExpiry = ref('')
 
@@ -69,17 +74,24 @@ async function load() {
 
 const filteredItems = computed(() => items.value)
 
-function selectItem(item: ReceivingOrderItem) {
-  selected.value = item
-  form.barcode = item.barcode || ''
-  form.actualQty = item.actualQty
-  form.damageQty = item.damageQty ?? 0
-  form.expiryDates = item.expiryDate ? item.expiryDate.split(',').filter(Boolean) : []
-  form.category = item.category || ''
-  form.sugar = item.sugar || ''
-  form.status = item.checkStatus === 'FAIL' ? 'FAIL' : item.checkStatus === 'PASS' ? 'PASS' : 'PASS'
-  newExpiry.value = ''
-  nextTick(() => barcodeInput.value?.focus())
+async function selectItem(item: ReceivingOrderItem) {
+  try {
+    const detail = await getReceivingOrderItem(item.id)
+    selected.value = detail
+    form.barcode = detail.barcode || ''
+    form.actualQty = detail.actualQty
+    form.damageQty = detail.damageQty ?? 0
+    form.expiryDates = detail.expiryDate ? detail.expiryDate.split(',').filter(Boolean) : []
+    form.category = detail.category || ''
+    form.sugar = detail.sugar || ''
+    form.remark = detail.remark || ''
+    form.damageImgList = detail.damageImgList ? [...detail.damageImgList] : []
+    form.status = detail.checkStatus === 'FAIL' ? 'FAIL' : detail.checkStatus === 'PASS' ? 'PASS' : 'PASS'
+    newExpiry.value = ''
+    nextTick(() => barcodeInput.value?.focus())
+  } catch (e: any) {
+    ElMessage.error(e.message || '加载商品详情失败')
+  }
 }
 
 function addExpiry() {
@@ -110,7 +122,9 @@ async function save() {
       expiryDate: form.expiryDates,
       category: form.category,
       sugar: form.category === 'Drink' ? form.sugar : undefined,
-      status: form.status
+      status: form.status,
+      remark: form.status === 'FAIL' ? (form.remark.trim() || undefined) : undefined,
+      damageImgList: form.status === 'FAIL' ? form.damageImgList : []
     })
     ElMessage.success('点货保存成功')
     const currentId = selected.value.id
@@ -131,7 +145,7 @@ async function save() {
 }
 
 function openCreate() {
-  Object.assign(createForm, { supplierCode: '', productName: '', barcode: '', actualQty: undefined, damageQty: 0, expiryDates: [], category: '', sugar: '' })
+  Object.assign(createForm, { supplierCode: '', productName: '', barcode: '', actualQty: undefined, damageQty: 0, expiryDates: [], category: '', sugar: '', remark: '', damageImgList: [] })
   createNewExpiry.value = ''
   createVisible.value = true
 }
@@ -164,7 +178,9 @@ async function submitCreate() {
       expiryDate: createForm.expiryDates,
       category: createForm.category,
       sugar: createForm.category === 'Drink' ? createForm.sugar : undefined,
-      status: 'FAIL'
+      status: 'FAIL',
+      remark: createForm.remark.trim() || undefined,
+      damageImgList: createForm.damageImgList
     })
     ElMessage.success('新增成功')
     createVisible.value = false
@@ -205,7 +221,7 @@ onMounted(load)
           :class="{ active: selected?.id === item.id }"
           @click="selectItem(item)"
         >
-          <div class="item-main"><b>{{ item.supplierCode || '-' }}</b><span>{{ item.productName || '-' }}</span></div>
+          <div class="item-main"><b>{{ item.supplierCode || '-' }}</b><span>{{ item.productName || '-' }}</span><small v-if="item.checkStatus==='PASS'" class="item-bbd">BBD: {{ item.expiryDate || '-' }}</small></div>
           <el-tag v-if="item.category" size="small">{{ item.category }}</el-tag>
         </div>
         <div class="pagination">
@@ -248,6 +264,10 @@ onMounted(load)
             <el-form-item label="实际来货个数" required><el-input-number v-model="form.actualQty" :min="0" :precision="0" /></el-form-item>
             <el-form-item label="破损数" required><el-input-number v-model="form.damageQty" :min="0" :precision="0" /></el-form-item>
           </template>
+          <template v-if="form.status === 'FAIL'">
+            <el-form-item label="备注"><el-input v-model="form.remark" type="textarea" :rows="3" maxlength="500" show-word-limit /></el-form-item>
+            <el-form-item label="破损图片"><DamageImageUpload v-model="form.damageImgList" /></el-form-item>
+          </template>
           <el-button type="primary" :loading="saving" @click="save">保存并继续</el-button>
         </el-form>
       </el-card>
@@ -275,6 +295,8 @@ onMounted(load)
         <el-form-item label="结果">异常</el-form-item>
         <el-form-item label="实际来货个数" required><el-input-number v-model="createForm.actualQty" :min="0" :precision="0" /></el-form-item>
         <el-form-item label="破损数" required><el-input-number v-model="createForm.damageQty" :min="0" :precision="0" /></el-form-item>
+        <el-form-item label="备注"><el-input v-model="createForm.remark" type="textarea" :rows="3" maxlength="500" show-word-limit /></el-form-item>
+        <el-form-item label="破损图片"><DamageImageUpload v-model="createForm.damageImgList" /></el-form-item>
       </el-form>
       <template #footer>
         <el-button @click="createVisible = false">取消</el-button>
