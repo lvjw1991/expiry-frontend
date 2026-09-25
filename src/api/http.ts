@@ -5,7 +5,24 @@ export interface ApiResponse<T> {
   [key: string]: unknown
 }
 
-const API_PREFIX = '/api'
+const API_PREFIX = import.meta.env.VITE_API_PREFIX || '/api'
+
+export function resolveAssetUrl(value?: string): string {
+  if (!value) return ''
+  try {
+    const url = new URL(value, window.location.origin)
+    if (url.pathname.includes('/uploads/')) {
+      let path = url.pathname
+      if (!path.startsWith('/ia/')) {
+        path = `/ia${path.startsWith('/') ? path : `/${path}`}`
+      }
+      return `${window.location.origin}${path}${url.search}${url.hash}`
+    }
+    return url.href
+  } catch {
+    return value
+  }
+}
 
 async function request<T>(url: string, options: RequestInit = {}): Promise<T> {
   const isMobile = window.location.pathname.startsWith('/m/')

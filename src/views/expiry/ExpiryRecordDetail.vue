@@ -19,7 +19,7 @@ function processLabel(v?:string){return ({UNPROCESS:'未处理',NORMAL:'正常�
 function fmt(v?:string){return v ? new Date(v).toLocaleString('zh-CN') : '-'}
 
 async function load(){loading.value=true;try{record.value=await getExpiryRecord(id)}catch(e:any){ElMessage.error(e.message||'加载失败')}finally{loading.value=false}}
-function openEdit(){if(!record.value)return;editForm.barcode=record.value.barcode;editForm.expiryDate=record.value.expiryDate;editForm.category=record.value.category||'';editForm.productName=record.value.productName||'';editVisible.value=true}
+function openEdit(){if(!record.value)return;editForm.barcode=record.value.barcode;editForm.expiryDate=record.value.expiryDate;editForm.category=record.value.category||'';editVisible.value=true}
 async function submitEdit(){if(!editForm.barcode||!editForm.expiryDate||!editForm.category)return ElMessage.warning('Barcode、有效期和类型不能为空');saving.value=true;try{await updateExpiryRecord(id,{...editForm});ElMessage.success('修改成功');editVisible.value=false;await load()}catch(e:any){ElMessage.error(e.message||'修改失败')}finally{saving.value=false}}
 function openConfirm(){confirmForm.status='CONFIRM';confirmForm.stock=record.value?.stock||0;confirmVisible.value=true}
 async function submitConfirm(){if(!record.value)return;saving.value=true;try{await confirmExpiryRecord(id,confirmForm.stock,confirmForm.status);ElMessage.success('确认成功');confirmVisible.value=false;await load()}catch(e:any){ElMessage.error(e.message||'确认失败')}finally{saving.value=false}}

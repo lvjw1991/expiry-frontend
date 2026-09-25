@@ -2,6 +2,7 @@
 import { ref } from 'vue'
 import { ElMessage } from 'element-plus'
 import { uploadDamageImage } from '../api/receivingOrder'
+import { resolveAssetUrl } from '../api/http'
 
 const props = withDefaults(defineProps<{ modelValue?: string[]; max?: number }>(), { modelValue: () => [], max: 3 })
 const emit = defineEmits<{ 'update:modelValue': [string[]] }>()
@@ -39,7 +40,7 @@ async function onChange(e:Event) {
   <div class="damage-image-upload">
     <div class="damage-image-list">
       <div v-for="(url,index) in modelValue || []" :key="url + index" class="damage-image-item">
-        <el-image :src="url" fit="cover" :preview-src-list="modelValue || []" :initial-index="index" />
+        <el-image :src="resolveAssetUrl(url)" fit="cover" :preview-src-list="(modelValue || []).map(resolveAssetUrl)" :initial-index="index" />
         <button type="button" class="damage-image-remove" @click="remove(index)">×</button>
       </div>
       <button v-if="(modelValue || []).length < max" type="button" class="damage-image-add" :disabled="uploading" @click="open">

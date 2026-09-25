@@ -15,7 +15,7 @@ import MobileExpiry from './views/mobile/MobileExpiry.vue'
 import MobileExpiryDetail from './views/mobile/MobileExpiryDetail.vue'
 
 const router = createRouter({
-  history: createWebHistory(),
+  history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
     { path: '/login', component: Login, meta: { public: true, platform: 'pc', layout: 'none' } },
     { path: '/m/login', component: MobileLogin, meta: { public: true, platform: 'mobile', layout: 'mobile-login' } },

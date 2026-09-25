@@ -253,7 +253,7 @@ onMounted(load)
               <el-option v-for="item in sugarOptions" :key="item" :label="item" :value="item" />
             </el-select>
           </el-form-item>
-          <el-form-item label="有效期">
+          <el-form-item label="有效期" :required="isExpiryRequired(form.category)">
             <div class="expiry-input"><el-date-picker v-model="newExpiry" type="date" value-format="YYYY-MM-DD" @change="addExpiry" /></div>
             <div class="expiry-tags"><el-tag v-for="d in form.expiryDates" :key="d" closable @close="removeExpiry(d)">{{ d }}</el-tag></div>
           </el-form-item>
@@ -288,7 +288,7 @@ onMounted(load)
             <el-option v-for="item in sugarOptions" :key="item" :label="item" :value="item" />
           </el-select>
         </el-form-item>
-        <el-form-item label="有效期">
+        <el-form-item label="有效期" :required="isExpiryRequired(createForm.category)">
           <div class="expiry-input"><el-date-picker v-model="createNewExpiry" type="date" value-format="YYYY-MM-DD" @change="addCreateExpiry" /></div>
           <div class="expiry-tags"><el-tag v-for="d in createForm.expiryDates" :key="d" closable @close="removeCreateExpiry(d)">{{ d }}</el-tag></div>
         </el-form-item>
