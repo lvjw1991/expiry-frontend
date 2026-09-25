@@ -1,3 +1,17 @@
+
+const BASE_PATH = (import.meta.env.BASE_URL || '/').replace(/\/$/, '')
+
+function isMobilePath() {
+  const pathname = window.location.pathname
+  const appPath = BASE_PATH && BASE_PATH !== '/'
+    ? pathname.startsWith(BASE_PATH)
+      ? pathname.slice(BASE_PATH.length) || '/'
+      : pathname
+    : pathname
+
+  return appPath.startsWith('/m/')
+}
+
 export interface ApiResponse<T> {
   code?: number
   message?: string
@@ -25,7 +39,7 @@ export function resolveAssetUrl(value?: string): string {
 }
 
 async function request<T>(url: string, options: RequestInit = {}): Promise<T> {
-  const isMobile = window.location.pathname.startsWith('/m/')
+  const isMobile = isMobilePath()
   const token = isMobile
     ? window.localStorage.getItem('mobile_access_token')
     : (window.localStorage.getItem('access_token') || window.localStorage.getItem('token'))
@@ -42,7 +56,8 @@ async function request<T>(url: string, options: RequestInit = {}): Promise<T> {
     window.localStorage.removeItem(isMobile ? 'mobile_access_token' : 'access_token')
     window.localStorage.removeItem(isMobile ? 'mobile_login_user' : 'login_user')
     const loginPath = isMobile ? '/m/login' : '/login'
-    if (location.pathname !== loginPath) location.href = loginPath
+    const target = `${import.meta.env.BASE_URL}${loginPath.replace(/^\/+/, '')}`
+    if (location.pathname !== target) location.href = target
     throw new Error('登录已过期')
   }
 
@@ -62,7 +77,7 @@ async function request<T>(url: string, options: RequestInit = {}): Promise<T> {
 }
 
 async function downloadFile(url: string, params?: Record<string, unknown>): Promise<{ blob: Blob; filename?: string }> {
-  const isMobile = window.location.pathname.startsWith('/m/')
+  const isMobile = isMobilePath()
   const token = isMobile
     ? window.localStorage.getItem('mobile_access_token')
     : (window.localStorage.getItem('access_token') || window.localStorage.getItem('token'))
@@ -84,7 +99,8 @@ async function downloadFile(url: string, params?: Record<string, unknown>): Prom
     window.localStorage.removeItem(isMobile ? 'mobile_access_token' : 'access_token')
     window.localStorage.removeItem(isMobile ? 'mobile_login_user' : 'login_user')
     const loginPath = isMobile ? '/m/login' : '/login'
-    if (location.pathname !== loginPath) location.href = loginPath
+    const target = `${import.meta.env.BASE_URL}${loginPath.replace(/^\/+/, '')}`
+    if (location.pathname !== target) location.href = target
     throw new Error('登录已过期')
   }
 

@@ -19,6 +19,7 @@ const router = createRouter({
   routes: [
     { path: '/login', component: Login, meta: { public: true, platform: 'pc', layout: 'none' } },
     { path: '/m/login', component: MobileLogin, meta: { public: true, platform: 'mobile', layout: 'mobile-login' } },
+    { path: '/m', redirect: '/m/check' },
     { path: '/', redirect: '/receiving-orders' },
     { path: '/receiving-orders', component: ReceivingOrderList, meta: { layout: 'desktop', platform: 'pc', requiresAuth: true } },
     { path: '/receiving-orders/:id', component: ReceivingOrderDetail, props: true, meta: { layout: 'desktop', platform: 'pc', requiresAuth: true } },
