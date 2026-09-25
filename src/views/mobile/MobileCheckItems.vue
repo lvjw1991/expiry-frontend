@@ -4,7 +4,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { Calendar, FullScreen } from '@element-plus/icons-vue'
 import { getReceivingOrder, getReceivingOrderItems, getReceivingOrderItem, checkReceivingItem, createReceivingItem } from '../../api/receivingOrder'
-import type { ReceivingOrder, ReceivingOrderItem } from '../../api/types'
+import type { OrderItemListVO, ReceivingOrder, ReceivingOrderItemDetail } from '../../api/types'
 import MobileNav from './MobileNav.vue'
 import MobileBarcodeScanner from './MobileBarcodeScanner.vue'
 import { CATEGORY_OPTIONS, SUGAR_OPTIONS, isExpiryRequired } from '../../constants/productOptions'
@@ -14,13 +14,13 @@ const route = useRoute()
 const router = useRouter()
 const id = Number(route.params.id)
 const order = ref<ReceivingOrder>()
-const rows = ref<ReceivingOrderItem[]>([])
+const rows = ref<OrderItemListVO[]>([])
 const loading = ref(false)
 const scannerRef = ref<InstanceType<typeof MobileBarcodeScanner>>()
 const createScannerRef = ref<InstanceType<typeof MobileBarcodeScanner>>()
 const expiryInputRef = ref<HTMLInputElement>()
 const createExpiryInputRef = ref<HTMLInputElement>()
-const selected = ref<ReceivingOrderItem>()
+const selected = ref<OrderItemListVO>()
 const saving = ref(false)
 const creating = ref(false)
 const createSaving = ref(false)
@@ -95,10 +95,10 @@ function setListStatus(v: 'UNCHECKED' | 'PASS' | 'FAIL') {
   load()
 }
 
-async function pick(x: ReceivingOrderItem) {
+async function pick(x: OrderItemListVO) {
+  selected.value = x
   try {
     const detail = await getReceivingOrderItem(x.id)
-    selected.value = detail
     form.barcode = detail.barcode || ''
     form.expiryDates = detail.expiryDate ? detail.expiryDate.split(',').filter(Boolean) : []
     form.newExpiry = ''
@@ -110,7 +110,8 @@ async function pick(x: ReceivingOrderItem) {
     form.remark = detail.remark || ''
     form.damageImgList = detail.damageImgList ? [...detail.damageImgList] : []
     form.status = detail.checkStatus === 'FAIL' ? 'FAIL' : 'PASS'
-  } catch (e: any) {
+  } catch (e:any) {
+    selected.value = undefined
     ElMessage.error(e.message || '加载商品详情失败')
   }
 }
@@ -158,7 +159,6 @@ function removeCreateExpiry(d: string) {
 function validateForm() {
   if (form.total === undefined || form.total === null || form.total < 0) return '请填写应到个数'
   if (!form.barcode.trim()) return '请扫码录入 Barcode'
-  if (!form.category) return '请选择类型'
   if (isExpiryRequired(form.category) && !form.expiryDates.length) return '当前类型必须填写有效期'
   if (form.category === 'Drink' && !form.sugar) return 'Drink 必须选择含糖等级'
   if (form.status === 'FAIL') {
@@ -181,7 +181,7 @@ async function save() {
       actualQty: form.status === 'FAIL' ? form.actualQty : form.total,
       damageQty: form.status === 'FAIL' ? (form.damageQty ?? 0) : undefined,
       expiryDate: form.expiryDates,
-      category: form.category,
+      category: form.category || undefined,
       sugar: form.category === 'Drink' ? form.sugar : undefined,
       status: form.status,
       remark: form.status === 'FAIL' ? (form.remark.trim() || undefined) : undefined,
@@ -242,7 +242,7 @@ async function submitCreate() {
       actualQty: createForm.actualQty,
       damageQty: createForm.damageQty ?? 0,
       expiryDate: createForm.expiryDates,
-      category: createForm.category,
+      category: createForm.category || undefined,
       sugar: createForm.category === 'Drink' ? createForm.sugar : undefined,
       status: 'FAIL',
       remark: createForm.remark.trim() || undefined,
@@ -335,7 +335,7 @@ onMounted(load)
           </div>
 
           <div class="mobile-check-field">
-            <label>类型 <span class="required-star">*</span></label>
+            <label>类型</label>
             <select v-model="form.category" class="compact-input">
               <option value="">请选择</option>
               <option v-for="x in CATEGORY_OPTIONS" :key="x" :value="x">{{ x }}</option>

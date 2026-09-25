@@ -3,15 +3,15 @@ import { onMounted, reactive, ref, nextTick, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { getReceivingOrder, getReceivingOrderItems, getReceivingOrderItem, checkReceivingItem, createReceivingItem } from '../../api/receivingOrder'
-import type { ReceivingOrder, ReceivingOrderItem } from '../../api/types'
+import type { OrderItemListVO, ReceivingOrder, ReceivingOrderItemDetail } from '../../api/types'
 import DamageImageUpload from '../../components/DamageImageUpload.vue'
 
-import { CATEGORY_OPTIONS } from '../../constants/productOptions'
+import { CATEGORY_OPTIONS, isExpiryRequired } from '../../constants/productOptions'
 const props = defineProps<{ id: string }>()
 const router = useRouter()
 const order = ref<ReceivingOrder>()
-const items = ref<ReceivingOrderItem[]>([])
-const selected = ref<ReceivingOrderItem>()
+const items = ref<OrderItemListVO[]>([])
+const selected = ref<OrderItemListVO>()
 const loading = ref(false)
 const saving = ref(false)
 const supplierCode = ref('')
@@ -74,10 +74,10 @@ async function load() {
 
 const filteredItems = computed(() => items.value)
 
-async function selectItem(item: ReceivingOrderItem) {
+async function selectItem(item: OrderItemListVO) {
+  selected.value = item
   try {
     const detail = await getReceivingOrderItem(item.id)
-    selected.value = detail
     form.barcode = detail.barcode || ''
     form.actualQty = detail.actualQty
     form.damageQty = detail.damageQty ?? 0
@@ -86,10 +86,10 @@ async function selectItem(item: ReceivingOrderItem) {
     form.sugar = detail.sugar || ''
     form.remark = detail.remark || ''
     form.damageImgList = detail.damageImgList ? [...detail.damageImgList] : []
-    form.status = detail.checkStatus === 'FAIL' ? 'FAIL' : detail.checkStatus === 'PASS' ? 'PASS' : 'PASS'
+    form.status = detail.checkStatus === 'FAIL' ? 'FAIL' : 'PASS'
     newExpiry.value = ''
     nextTick(() => barcodeInput.value?.focus())
-  } catch (e: any) {
+  } catch (e:any) {
     ElMessage.error(e.message || '加载商品详情失败')
   }
 }
@@ -106,7 +106,7 @@ function removeExpiry(d: string) {
 async function save() {
   if (!selected.value) return
   if (!form.barcode.trim()) return ElMessage.warning('请输入实际 Barcode')
-  if (!form.category) return ElMessage.warning('请选择类型')
+  if (isExpiryRequired(form.category) && !form.expiryDates.length) return ElMessage.warning('当前类型必须填写有效期')
   if (form.category === 'Drink' && !form.sugar) return ElMessage.warning('Drink 必须选择含糖等级')
   if (form.status === 'FAIL') {
     if (form.actualQty === undefined || form.actualQty === null) return ElMessage.warning('异常状态需填写实际来货个数')
@@ -120,7 +120,7 @@ async function save() {
       actualQty: form.status === 'FAIL' ? form.actualQty : undefined,
       damageQty: form.status === 'FAIL' ? (form.damageQty ?? 0) : undefined,
       expiryDate: form.expiryDates,
-      category: form.category,
+      category: form.category || undefined,
       sugar: form.category === 'Drink' ? form.sugar : undefined,
       status: form.status,
       remark: form.status === 'FAIL' ? (form.remark.trim() || undefined) : undefined,
@@ -161,7 +161,7 @@ function removeCreateExpiry(d: string) {
 
 async function submitCreate() {
   if (!createForm.barcode.trim()) return ElMessage.warning('请输入 Barcode')
-  if (!createForm.category) return ElMessage.warning('请选择类型')
+  if (isExpiryRequired(createForm.category) && !createForm.expiryDates.length) return ElMessage.warning('当前类型必须填写有效期')
   if (createForm.category === 'Drink' && !createForm.sugar) return ElMessage.warning('Drink 必须选择含糖等级')
   if (createForm.actualQty === undefined || createForm.actualQty === null) return ElMessage.warning('异常状态需填写实际来货个数')
   if (createForm.damageQty === undefined || createForm.damageQty === null) return ElMessage.warning('异常状态需填写破损数')
@@ -176,7 +176,7 @@ async function submitCreate() {
       actualQty: createForm.actualQty,
       damageQty: createForm.damageQty ?? 0,
       expiryDate: createForm.expiryDates,
-      category: createForm.category,
+      category: createForm.category || undefined,
       sugar: createForm.category === 'Drink' ? createForm.sugar : undefined,
       status: 'FAIL',
       remark: createForm.remark.trim() || undefined,
@@ -222,7 +222,7 @@ onMounted(load)
           @click="selectItem(item)"
         >
           <div class="item-main"><b>{{ item.supplierCode || '-' }}</b><span>{{ item.productName || '-' }}</span><small v-if="item.checkStatus==='PASS'" class="item-bbd">BBD: {{ item.expiryDate || '-' }}</small></div>
-          <el-tag v-if="item.category" size="small">{{ item.category }}</el-tag>
+          
         </div>
         <div class="pagination">
           <el-pagination
@@ -243,7 +243,7 @@ onMounted(load)
           <el-form-item label="订单箱数">{{ selected.orderQty ?? '-' }}</el-form-item>
           <el-form-item label="应到个数">{{ selected.total ?? '-' }}</el-form-item>
           <el-form-item label="Barcode" required><el-input ref="barcodeInput" v-model="form.barcode" placeholder="录入实际条形码" clearable @keyup.enter="save" /></el-form-item>
-          <el-form-item label="类型" required>
+          <el-form-item label="类型">
             <el-select v-model="form.category" placeholder="请选择类型" style="width: 220px">
               <el-option v-for="item in CATEGORY_OPTIONS" :key="item" :label="item" :value="item" />
             </el-select>

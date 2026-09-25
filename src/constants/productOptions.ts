@@ -12,4 +12,4 @@ export const SUGAR_OPTIONS = [
 export const EXPIRY_OPTIONAL_CATEGORIES = ['Fresh', 'NF'] as const
 
 export const isExpiryRequired = (category?: string) =>
-  !!category && !EXPIRY_OPTIONAL_CATEGORIES.includes(category as (typeof EXPIRY_OPTIONAL_CATEGORIES)[number])
+  !EXPIRY_OPTIONAL_CATEGORIES.includes(category as (typeof EXPIRY_OPTIONAL_CATEGORIES)[number])

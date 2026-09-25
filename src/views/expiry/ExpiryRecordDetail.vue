@@ -39,6 +39,7 @@ onMounted(load)
       <el-descriptions-item label="有效期">{{record.expiryDate}}</el-descriptions-item><el-descriptions-item label="库存">{{record.stock}}</el-descriptions-item>
       <el-descriptions-item label="类型">{{record.category||'-'}}</el-descriptions-item><el-descriptions-item label="商品名称">{{record.productName||'-'}}</el-descriptions-item>
       <el-descriptions-item label="图片" :span="2"><el-image v-if="record.imgUrl" :src="record.imgUrl" style="width:100px;height:100px" fit="contain"/><span v-else>-</span></el-descriptions-item>
+      <el-descriptions-item label="其他有效期" :span="2"><div v-if="record.otherDateList?.length" style="display:flex;gap:8px;flex-wrap:wrap"><el-tag v-for="date in record.otherDateList" :key="date" effect="plain">{{date}}</el-tag></div><span v-else>-</span></el-descriptions-item>
       <el-descriptions-item label="条形码" :span="2"><BarcodeImage :value="record.barcode"/></el-descriptions-item>
       <el-descriptions-item label="确认状态"><el-tag>{{confirmLabel(record.confirmStatus)}}</el-tag></el-descriptions-item><el-descriptions-item label="确认时间">{{fmt(record.confirmTime)}}</el-descriptions-item>
       <el-descriptions-item label="处理状态"><el-tag>{{processLabel(record.processStatus)}}</el-tag></el-descriptions-item><el-descriptions-item label="处理时间">{{fmt(record.processTime)}}</el-descriptions-item>

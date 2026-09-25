@@ -45,6 +45,10 @@ onMounted(load)
         <h2>{{record.productName||'-'}}</h2>
         <div class="detail-grid"><div><span>Barcode</span><b>{{record.barcode}}</b></div><div><span>有效期</span><b>{{record.expiryDate}}</b></div><div><span>库存</span><b>{{record.stock}}</b></div><div><span>Category</span><b>{{record.category||'-'}}</b></div></div>
       </section>
+      <section v-if="record.otherDateList?.length" class="mobile-detail-card">
+        <h3>其他有效期</h3>
+        <div class="mobile-other-dates"><span v-for="date in record.otherDateList" :key="date">{{ date }}</span></div>
+      </section>
       <section class="mobile-detail-card">
         <h3>条形码</h3>
         <BarcodeImage :value="record.barcode"/>
