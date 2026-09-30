@@ -304,7 +304,7 @@ onMounted(load)
           <div>
             <div class="mobile-card-title">{{ item.productName || '-' }}</div>
             <div class="mobile-card-line mobile-check-item-code">货号：{{ item.supplierCode || '-' }}</div>
-            <div v-if="item.checkStatus==='PASS'" class="mobile-card-line mobile-check-item-bbd">BBD：{{ item.expiryDate || '-' }}</div>
+            <div v-if="item.checkStatus==='PASS'" :class="['mobile-card-line', 'mobile-check-item-bbd', { 'near-expiry-bbd': isNearExpiry(item.expiryDate) }]">BBD：{{ item.expiryDate || '-' }}</div>
           </div>
           <div class="mobile-check-item-qty">{{ item.orderQty ?? '-' }} 箱</div>
         </button>
