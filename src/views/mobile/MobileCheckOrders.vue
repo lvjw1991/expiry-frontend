@@ -14,9 +14,9 @@ onMounted(load)
   <div class="mobile-page"><div class="mobile-topbar"><b>📦 点货</b></div><main class="mobile-content">
     <div class="mobile-section-title">选择收货单</div>
     <div v-if="loading" class="mobile-empty">加载中...</div><div v-else-if="!rows.length" class="mobile-empty">暂无可点货收货单</div>
-    <button v-for="row in rows" :key="row.id" class="mobile-card mobile-order-card" @click="router.push(`/m/check/${row.id}`)">
+    <div v-for="row in rows" :key="row.id" class="mobile-card mobile-order-card" role="button" tabindex="0" @click="router.push(`/m/check/${row.id}`)" @keydown.enter="router.push(`/m/check/${row.id}`)">
       <div class="mobile-card-title">收货单 #{{row.id}}</div><div class="mobile-card-line">供应商：{{row.supplierName||row.supplierId}}</div><div class="mobile-card-line">到货：{{row.receiveDate||'-'}}</div>
       <div class="mobile-card-footer"><span class="mobile-status">{{row.progress==='CHECKING'?'点货中':'待点货'}}</span><span>进入 ›</span></div>
-    </button>
+    </div>
   </main><MobileNav/></div>
 </template>

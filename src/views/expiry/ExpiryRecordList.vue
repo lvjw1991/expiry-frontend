@@ -1,12 +1,13 @@
 <script setup lang="ts">
 import { onMounted, reactive, ref } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { confirmExpiryRecord, createExpiryRecord, deleteExpiryRecord, getExpiryRecords, processExpiryRecord, updateExpiryRecord, importExpiryRecords } from '../../api/expiryRecord'
 import type { ConfirmStatus, ExpiryRecord, ProcessStatus } from '../../api/types'
 
 import { CATEGORY_OPTIONS } from '../../constants/productOptions'
 const router = useRouter()
+const route = useRoute()
 const loading = ref(false)
 const rows = ref<ExpiryRecord[]>([])
 const total = ref(0)
@@ -31,7 +32,35 @@ const query = reactive<{
   confirmStatus?: ConfirmStatus
   processStatus?: ProcessStatus
   category: string
-}>({ pageNum: 0, pageSize: 20, barcode: '', expireDateFrom: '', expireDateTo: '', confirmStatus: undefined, processStatus: undefined, category: '' })
+  createDateFrom: string
+  createDateTo: string
+}>({
+  pageNum: Number(route.query.pageNum) || 0,
+  pageSize: Number(route.query.pageSize) || 20,
+  barcode: String(route.query.barcode || ''),
+  expireDateFrom: String(route.query.expireDateFrom || ''),
+  expireDateTo: String(route.query.expireDateTo || ''),
+  confirmStatus: (route.query.confirmStatus as ConfirmStatus) || undefined,
+  processStatus: (route.query.processStatus as ProcessStatus) || undefined,
+  category: String(route.query.category || ''),
+  createDateFrom: String(route.query.createDateFrom || ''),
+  createDateTo: String(route.query.createDateTo || '')
+})
+
+function syncRouteQuery() {
+  const q: Record<string, string> = {}
+  if (query.pageNum) q.pageNum = String(query.pageNum)
+  if (query.pageSize !== 20) q.pageSize = String(query.pageSize)
+  if (query.barcode) q.barcode = query.barcode
+  if (query.expireDateFrom) q.expireDateFrom = query.expireDateFrom
+  if (query.expireDateTo) q.expireDateTo = query.expireDateTo
+  if (query.confirmStatus) q.confirmStatus = query.confirmStatus
+  if (query.processStatus) q.processStatus = query.processStatus
+  if (query.category) q.category = query.category
+  if (query.createDateFrom) q.createDateFrom = query.createDateFrom
+  if (query.createDateTo) q.createDateTo = query.createDateTo
+  router.replace({ path: '/expiry-records', query: q })
+}
 
 const editForm = reactive({ barcode: '', expiryDate: '', category: '', stock: 0 })
 const addForm = reactive({ barcode: '', expiryDate: '', category: '', stock: 0 })
@@ -55,7 +84,8 @@ async function load() {
 }
 
 function reset() {
-  Object.assign(query, { pageNum: 0, barcode: '', expireDateFrom: '', expireDateTo: '', confirmStatus: undefined, processStatus: undefined, category: '' })
+  Object.assign(query, { pageNum: 0, barcode: '', expireDateFrom: '', expireDateTo: '', confirmStatus: undefined, processStatus: undefined, category: '', createDateFrom: '', createDateTo: '' })
+  syncRouteQuery()
   load()
 }
 
@@ -72,7 +102,7 @@ function processTag(v: ProcessStatus) {
   return ({ UNPROCESS: 'warning', NORMAL: 'success', PROMOTE: 'warning', DAMAGE: 'danger' } as Record<string, any>)[v] || 'info'
 }
 
-function openDetail(row: ExpiryRecord) { router.push(`/expiry-records/${row.id}`) }
+function openDetail(row: ExpiryRecord) { router.push({ path: `/expiry-records/${row.id}`, query: route.query }) }
 
 function openConfirm(row: ExpiryRecord) {
   confirmRow.value = row
@@ -123,7 +153,7 @@ function openAdd() {
 }
 
 async function submitAdd() {
-  if (!addForm.barcode.trim() || !addForm.expiryDate || !addForm.category) return ElMessage.warning('Barcode、有效期和类型不能为空')
+  if (!addForm.barcode.trim() || !addForm.expiryDate) return ElMessage.warning('Barcode和有效期不能为空')
   addSaving.value = true
   try {
     await createExpiryRecord({ ...addForm, barcode: addForm.barcode.trim() })
@@ -164,6 +194,11 @@ async function remove(row: ExpiryRecord) {
   }
 }
 
+function formatDateTime(value?: string) {
+  if (!value) return '-'
+  return value.replace('T', ' ').slice(0, 19)
+}
+
 onMounted(load)
 </script>
 
@@ -174,18 +209,20 @@ onMounted(load)
       <el-form :inline="true" :model="query">
         <el-form-item label="Barcode"><el-input v-model="query.barcode" clearable /></el-form-item>
         <el-form-item label="有效期"><el-date-picker v-model="query.expireDateFrom" type="date" value-format="YYYY-MM-DD" placeholder="开始"/><span style="margin:0 8px">-</span><el-date-picker v-model="query.expireDateTo" type="date" value-format="YYYY-MM-DD" placeholder="结束"/></el-form-item>
+        <el-form-item label="创建日期"><el-date-picker v-model="query.createDateFrom" type="date" value-format="YYYY-MM-DD" placeholder="开始"/><span style="margin:0 8px">-</span><el-date-picker v-model="query.createDateTo" type="date" value-format="YYYY-MM-DD" placeholder="结束"/></el-form-item>
         <el-form-item label="确认状态"><el-select v-model="query.confirmStatus" clearable placeholder="全部" style="width:130px"><el-option label="未确认" value="UNCONFIRM"/><el-option label="已确认" value="CONFIRM"/><el-option label="未找到" value="NOT_FOUND"/></el-select></el-form-item>
         <el-form-item label="处理状态"><el-select v-model="query.processStatus" clearable placeholder="全部" style="width:130px"><el-option label="未处理" value="UNPROCESS"/><el-option label="正常销售" value="NORMAL"/><el-option label="打折" value="PROMOTE"/><el-option label="报损" value="DAMAGE"/></el-select></el-form-item>
         <el-form-item label="类型"><el-select v-model="query.category" clearable placeholder="全部" style="width:150px"><el-option v-for="x in CATEGORY_OPTIONS" :key="x" :label="x" :value="x"/></el-select></el-form-item>
-        <el-form-item><el-button type="primary" @click="query.pageNum=0;load()">查询</el-button><el-button @click="reset">重置</el-button></el-form-item>
+        <el-form-item><el-button type="primary" @click="query.pageNum=0;syncRouteQuery();load()">查询</el-button><el-button @click="reset">重置</el-button></el-form-item>
       </el-form>
 
       <el-table :data="rows" v-loading="loading" stripe>
         <el-table-column prop="barcode" label="Barcode" min-width="150"/>
-        <el-table-column prop="expiryDate" label="有效期" width="130" sortable/>
+        <el-table-column prop="expiryDate" label="有效期" width="130"/>
         <el-table-column prop="stock" label="库存" width="80"/>
         <el-table-column prop="category" label="类型" width="130"/>
         <el-table-column prop="productName" label="商品名称" min-width="180"/>
+        <el-table-column prop="createdAt" label="创建日期" width="170"><template #default="{row}">{{formatDateTime(row.createdAt)}}</template></el-table-column>
         <el-table-column label="图片" width="80"><template #default="{row}"><el-image v-if="row.imgUrl" :src="row.imgUrl" style="width:40px;height:40px" fit="cover"/><span v-else>-</span></template></el-table-column>
         <el-table-column label="确认状态" width="100"><template #default="{row}"><el-tag :type="confirmTag(row.confirmStatus)">{{confirmLabel(row.confirmStatus)}}</el-tag></template></el-table-column>
         <el-table-column label="处理状态" width="110"><template #default="{row}"><el-tag :type="processTag(row.processStatus)">{{processLabel(row.processStatus)}}</el-tag></template></el-table-column>
@@ -199,7 +236,7 @@ onMounted(load)
           </template>
         </el-table-column>
       </el-table>
-      <div class="pagination"><el-pagination :current-page="query.pageNum+1" :page-size="query.pageSize" :total="total" layout="total, sizes, prev, pager, next, jumper" :page-sizes="[10,20,50]" @current-change="(p:number)=>{query.pageNum=p-1;load()}" @size-change="(s:number)=>{query.pageSize=s;query.pageNum=0;load()}"/></div>
+      <div class="pagination"><el-pagination :current-page="query.pageNum+1" :page-size="query.pageSize" :total="total" layout="total, sizes, prev, pager, next, jumper" :page-sizes="[10,20,50]" @current-change="(p:number)=>{query.pageNum=p-1;syncRouteQuery();load()}" @size-change="(s:number)=>{query.pageSize=s;query.pageNum=0;syncRouteQuery();load()}"/></div>
     </el-card>
 
     <el-dialog v-model="processVisible" title="处理有效期记录" width="430px">
@@ -233,7 +270,7 @@ onMounted(load)
       <el-form label-width="90px">
         <el-form-item label="Barcode" required><el-input v-model="addForm.barcode"/></el-form-item>
         <el-form-item label="有效期" required><el-date-picker v-model="addForm.expiryDate" type="date" value-format="YYYY-MM-DD"/></el-form-item>
-        <el-form-item label="类型" required><el-select v-model="addForm.category" clearable style="width:100%"><el-option v-for="x in CATEGORY_OPTIONS" :key="x" :label="x" :value="x"/></el-select></el-form-item>
+        <el-form-item label="类型"><el-select v-model="addForm.category" clearable style="width:100%"><el-option v-for="x in CATEGORY_OPTIONS" :key="x" :label="x" :value="x"/></el-select></el-form-item>
         <el-form-item label="库存"><el-input-number v-model="addForm.stock" :min="0" :precision="0"/></el-form-item>
       </el-form>
       <template #footer><el-button @click="addVisible=false">取消</el-button><el-button type="primary" :loading="addSaving" @click="submitAdd">保存</el-button></template>

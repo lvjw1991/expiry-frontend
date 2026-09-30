@@ -26,6 +26,9 @@ const creating = ref(false)
 const createSaving = ref(false)
 const listQuery = reactive({ keyword: '', checkStatus: 'UNCHECKED' as 'UNCHECKED' | 'PASS' | 'FAIL' })
 const statusTotals = reactive({ UNCHECKED: 0, FAIL: 0, PASS: 0 })
+const today = new Date()
+const pad = (n:number) => String(n).padStart(2, '0')
+const todayDate = `${today.getFullYear()}-${pad(today.getMonth()+1)}-${pad(today.getDate())}`
 
 const form = reactive({
   barcode: '',
@@ -54,6 +57,15 @@ const createForm = reactive({
   remark: '',
   damageImgList: [] as string[]
 })
+
+function isNearExpiry(value?: string) {
+  if (!value) return false
+  const bbd = value.slice(0, 10)
+  const limit = new Date(today)
+  limit.setMonth(limit.getMonth() + 3)
+  const limitDate = `${limit.getFullYear()}-${pad(limit.getMonth()+1)}-${pad(limit.getDate())}`
+  return bbd >= todayDate && bbd <= limitDate
+}
 
 async function load() {
   loading.value = true
@@ -330,7 +342,7 @@ onMounted(load)
                 <span v-else class="mobile-placeholder">请选择有效期</span>
               </div>
               <button type="button" class="mobile-icon-button" aria-label="选择有效期" @click="openExpiryPicker"><Calendar /></button>
-              <input ref="expiryInputRef" v-model="form.newExpiry" type="date" class="mobile-hidden-date-input" @change="addExpiry" />
+              <input ref="expiryInputRef" v-model="form.newExpiry" type="date" :min="todayDate" class="mobile-hidden-date-input" @change="addExpiry" />
             </div>
           </div>
 
@@ -422,7 +434,7 @@ onMounted(load)
                 <span v-else class="mobile-placeholder">请选择有效期</span>
               </div>
               <button type="button" class="mobile-icon-button" aria-label="选择有效期" @click="openCreateExpiryPicker"><Calendar /></button>
-              <input ref="createExpiryInputRef" v-model="createForm.newExpiry" type="date" class="mobile-hidden-date-input" @change="addCreateExpiry" />
+              <input ref="createExpiryInputRef" v-model="createForm.newExpiry" type="date" :min="todayDate" class="mobile-hidden-date-input" @change="addCreateExpiry" />
             </div>
           </div>
 

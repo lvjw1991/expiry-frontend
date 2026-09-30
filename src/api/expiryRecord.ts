@@ -1,7 +1,7 @@
 import { http } from './http'
 import type { ConfirmStatus, ExpiryRecord, Page, ProcessStatus } from './types'
-export interface ExpiryRecordQuery { expireDateFrom?:string; expireDateTo?:string; confirmStatus?:ConfirmStatus; processStatus?:ProcessStatus; category?:string; barcode?:string; pageNum?:number; pageSize?:number }
-export interface ExpiryRecordUpdateRequest { barcode:string; expiryDate:string; category:string; stock:number }
+export interface ExpiryRecordQuery { expireDateFrom?:string; expireDateTo?:string; createDateFrom?:string; createDateTo?:string; confirmStatus?:ConfirmStatus; processStatus?:ProcessStatus; category?:string; barcode?:string; pageNum?:number; pageSize?:number }
+export interface ExpiryRecordUpdateRequest { barcode:string; expiryDate:string; category?:string; stock:number }
 export function getExpiryRecords(params:ExpiryRecordQuery){return http.get<Page<ExpiryRecord>>('/records',params)}
 export interface ExpiryRecordCalendarQuery { expireDateFrom:string; expireDateTo:string; confirmStatus?:ConfirmStatus; processStatus?:ProcessStatus; category?:string }
 export function getExpiryRecordsCalendar(params:ExpiryRecordCalendarQuery){return http.get<ExpiryRecord[]>('/records/calendar',params)}

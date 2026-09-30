@@ -4,6 +4,7 @@ import { computed, ref } from 'vue'
 const emit = defineEmits<{ scanned: [string] }>()
 
 const fileInput = ref<HTMLInputElement>()
+const galleryInput = ref<HTMLInputElement>()
 const manualMode = ref(false)
 const manualBarcode = ref('')
 const capturing = ref(false)
@@ -26,7 +27,14 @@ function open() {
   manualMode.value = false
   fileInput.value?.click()
 }
-defineExpose({ open })
+
+// 从系统相册/文件选择图片；与拍照共用完全相同的识别逻辑
+function openGallery() {
+  error.value = ''
+  manualMode.value = false
+  galleryInput.value?.click()
+}
+defineExpose({ open, openGallery })
 
 function rotateCanvas(src: HTMLCanvasElement, deg: number): HTMLCanvasElement {
   const out = document.createElement('canvas')
@@ -157,4 +165,5 @@ function dismiss() { error.value = ''; manualMode.value = false }
 </div>
 
 <input ref="fileInput" type="file" accept="image/*" capture="environment" style="display:none" @change="onFileSelected" />
+<input ref="galleryInput" type="file" accept="image/*" style="display:none" @change="onFileSelected" />
 </template>

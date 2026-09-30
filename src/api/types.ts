@@ -8,4 +8,4 @@ export interface ReceivingOrderItemDetail extends OrderItemListVO { actualQty?: 
 export type ReceivingOrderItem = ReceivingOrderItemDetail
 export type ConfirmStatus = 'UNCONFIRM'|'CONFIRM'|'NOT_FOUND'
 export type ProcessStatus = 'UNPROCESS'|'NORMAL'|'PROMOTE'|'DAMAGE'
-export interface ExpiryRecord { id:number; barcode:string; expiryDate:string; stock:number; confirmStatus:ConfirmStatus; confirmTime?:string; processStatus:ProcessStatus; processTime?:string; processRemark?:string; category?:string; productName?:string; imgUrl?:string; otherDateList?:string[] }
+export interface ExpiryRecord { id:number; barcode:string; expiryDate:string; stock:number; confirmStatus:ConfirmStatus; confirmTime?:string; processStatus:ProcessStatus; processTime?:string; processRemark?:string; category?:string; productName?:string; imgUrl?:string; createdAt?:string; otherDateList?:string[] }
