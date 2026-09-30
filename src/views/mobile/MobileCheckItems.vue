@@ -20,7 +20,8 @@ const scannerRef = ref<InstanceType<typeof MobileBarcodeScanner>>()
 const createScannerRef = ref<InstanceType<typeof MobileBarcodeScanner>>()
 const expiryInputRef = ref<HTMLInputElement>()
 const createExpiryInputRef = ref<HTMLInputElement>()
-const selected = ref<OrderItemListVO>()const selectedStorageKey = `mobile-check-selected-${id}`
+const selected = ref<OrderItemListVO>()
+const selectedStorageKey = `mobile-check-selected-${id}`
 const saving = ref(false)
 const creating = ref(false)
 const createSaving = ref(false)
