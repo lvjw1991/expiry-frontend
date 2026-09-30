@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { Menu, Calendar, List, UserFilled, Shop, Goods } from '@element-plus/icons-vue'
 import { logout } from './api/auth'
@@ -8,11 +8,33 @@ const route = useRoute()
 const router = useRouter()
 const collapsed = ref(false)
 const username = ref('用户')
+const role = ref<'ADMIN' | 'STAFF' | string>('STAFF')
 
-const savedUser = window.localStorage.getItem('login_user')
-if (savedUser) {
-  try { username.value = JSON.parse(savedUser).username || '用户' } catch {}
+function loadUser() {
+  const savedUser = window.localStorage.getItem('login_user')
+
+  if (!savedUser) {
+    username.value = '用户'
+    role.value = 'STAFF'
+    return
+  }
+
+  try {
+    const user = JSON.parse(savedUser)
+    username.value = user.username || '用户'
+    role.value = user.role || 'STAFF'
+  } catch {
+    username.value = '用户'
+    role.value = 'STAFF'
+  }
 }
+
+loadUser()
+
+// 登录成功后 App 不会重新挂载，因此路由变化时重新读取角色
+watch(() => route.path, () => {
+  loadUser()
+})
 
 function doLogout() {
   logout()
@@ -31,9 +53,9 @@ function doLogout() {
       <el-menu :default-active="route.path" :collapse="collapsed" router background-color="#18222c" text-color="#cfd8e3" active-text-color="#409eff">
         <el-menu-item index="/receiving-orders"><el-icon><List /></el-icon><span>来货管理</span></el-menu-item>
         <el-menu-item index="/expiry-records"><el-icon><Calendar /></el-icon><span>有效期管理</span></el-menu-item>
-        <el-menu-item index="/suppliers"><el-icon><Shop /></el-icon><span>供应商管理</span></el-menu-item>
-        <el-menu-item index="/supplier-products"><el-icon><Goods /></el-icon><span>供应商商品</span></el-menu-item>
-        <el-menu-item index="/products"><el-icon><Goods /></el-icon><span>商品管理</span></el-menu-item>
+        <el-menu-item v-if="role === 'ADMIN'" index="/suppliers"><el-icon><Shop /></el-icon><span>供应商管理</span></el-menu-item>
+        <el-menu-item v-if="role === 'ADMIN'" index="/supplier-products"><el-icon><Goods /></el-icon><span>供应商商品</span></el-menu-item>
+        <el-menu-item v-if="role === 'ADMIN'" index="/products"><el-icon><Goods /></el-icon><span>商品管理</span></el-menu-item>
       </el-menu>
     </el-aside>
 
