@@ -20,7 +20,7 @@ const scannerRef = ref<InstanceType<typeof MobileBarcodeScanner>>()
 const createScannerRef = ref<InstanceType<typeof MobileBarcodeScanner>>()
 const expiryInputRef = ref<HTMLInputElement>()
 const createExpiryInputRef = ref<HTMLInputElement>()
-const selected = ref<OrderItemListVO>()
+const selected = ref<OrderItemListVO>()const selectedStorageKey = `mobile-check-selected-${id}`
 const saving = ref(false)
 const creating = ref(false)
 const createSaving = ref(false)
@@ -109,6 +109,7 @@ function setListStatus(v: 'UNCHECKED' | 'PASS' | 'FAIL') {
 
 async function pick(x: OrderItemListVO) {
   selected.value = x
+  sessionStorage.setItem(selectedStorageKey, String(x.id))
   try {
     const detail = await getReceivingOrderItem(x.id)
     form.barcode = detail.barcode || ''
@@ -124,6 +125,7 @@ async function pick(x: OrderItemListVO) {
     form.status = detail.checkStatus === 'FAIL' ? 'FAIL' : 'PASS'
   } catch (e:any) {
     selected.value = undefined
+    sessionStorage.removeItem(selectedStorageKey)
     ElMessage.error(e.message || '加载商品详情失败')
   }
 }
@@ -201,6 +203,7 @@ async function save() {
     })
     ElMessage.success('点货成功')
     selected.value = undefined
+    sessionStorage.removeItem(selectedStorageKey)
     await load()
   } catch (e: any) {
     ElMessage.error(e.message || '保存失败')
@@ -212,6 +215,7 @@ async function save() {
 function backToList() {
   if (selected.value || creating.value) {
     selected.value = undefined
+    sessionStorage.removeItem(selectedStorageKey)
     creating.value = false
     return
   }
@@ -234,6 +238,18 @@ function openCreate() {
   })
   creating.value = true
   selected.value = undefined
+  sessionStorage.removeItem(selectedStorageKey)
+}
+
+async function restoreSelected() {
+  const savedId = Number(sessionStorage.getItem(selectedStorageKey))
+  if (!savedId) return
+  const row = rows.value.find(x => x.id === savedId)
+  if (row) {
+    await pick(row)
+  } else {
+    sessionStorage.removeItem(selectedStorageKey)
+  }
 }
 
 async function submitCreate() {
@@ -270,7 +286,10 @@ async function submitCreate() {
   }
 }
 
-onMounted(load)
+onMounted(async () => {
+  await load()
+  await restoreSelected()
+})
 </script>
 
 <template>
