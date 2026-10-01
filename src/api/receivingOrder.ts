@@ -9,6 +9,8 @@ export function deleteReceivingOrder(id:number){return http.delete<boolean>(`/or
 export function completeReceivingOrder(id:number){return http.post<boolean>(`/orders/${id}/complete`)}
 export interface OrderItemQuery { orderId:number; productName?:string; supplierCode?:string; barcode?:string; checkStatus?:'UNCHECKED'|'PASS'|'FAIL'; pageNum?:number; pageSize?:number }
 export function getReceivingOrderItems(params:OrderItemQuery){return http.get<Page<OrderItemListVO>>('/items',params as any)}
+export interface MobileItemQuery { orderId:number; keyword?:string; category?:string; checkStatus?:'UNCHECKED'|'PASS'|'FAIL'; pageNum?:number; pageSize?:number }
+export function getMobileItems(params:MobileItemQuery){return http.get<Page<OrderItemListVO>>('/items/mobile',params as any)}
 export function getReceivingOrderItem(id:number){return http.get<ReceivingOrderItemDetail>(`/items/${id}`)}
 export interface ImportResult { success:number; skip:number }
 export function importReceivingOrderExcel(orderId:number,file:File){const form=new FormData();form.append('file',file);return http.post<ImportResult>('/orders/import?orderId='+encodeURIComponent(String(orderId)),form)}

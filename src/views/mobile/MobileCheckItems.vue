@@ -3,7 +3,7 @@ import { onMounted, reactive, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { FullScreen } from '@element-plus/icons-vue'
-import { getReceivingOrder, getReceivingOrderItems, getReceivingOrderItem, checkReceivingItem, createReceivingItem } from '../../api/receivingOrder'
+import { getReceivingOrder, getReceivingOrderItems, getMobileItems, getReceivingOrderItem, checkReceivingItem, createReceivingItem } from '../../api/receivingOrder'
 import type { OrderItemListVO, ReceivingOrder, ReceivingOrderItemDetail } from '../../api/types'
 import MobileNav from './MobileNav.vue'
 import MobileBarcodeScanner from './MobileBarcodeScanner.vue'
@@ -24,7 +24,7 @@ const selectedStorageKey = `mobile-check-selected-${id}`
 const saving = ref(false)
 const creating = ref(false)
 const createSaving = ref(false)
-const listQuery = reactive({ keyword: '', checkStatus: 'UNCHECKED' as 'UNCHECKED' | 'PASS' | 'FAIL' })
+const listQuery = reactive({ keyword: '', category: '', checkStatus: 'UNCHECKED' as 'UNCHECKED' | 'PASS' | 'FAIL' })
 const statusTotals = reactive({ UNCHECKED: 0, FAIL: 0, PASS: 0 })
 const today = new Date()
 const pad = (n:number) => String(n).padStart(2, '0')
@@ -73,8 +73,10 @@ async function load() {
     order.value = await getReceivingOrder(id)
 
     const [d, uncheckedCount, failCount, passCount] = await Promise.all([
-      getReceivingOrderItems({
+      getMobileItems({
         orderId: id,
+        keyword: listQuery.keyword.trim() || undefined,
+        category: listQuery.category || undefined,
         pageNum: 0,
         pageSize: 50,
         checkStatus: listQuery.checkStatus
@@ -88,10 +90,7 @@ async function load() {
     statusTotals.FAIL = failCount.total ?? 0
     statusTotals.PASS = passCount.total ?? 0
 
-    const keyword = listQuery.keyword.trim().toLowerCase()
-    rows.value = (d.list || []).filter(x =>
-      !keyword || `${x.productName || ''} ${x.supplierCode || ''}`.toLowerCase().includes(keyword)
-    )
+    rows.value = d.list || []
   } catch (e: any) {
     ElMessage.error(e.message || '加载失败')
   } finally {
@@ -104,6 +103,11 @@ function doListQuery() {
 
 function setListStatus(v: 'UNCHECKED' | 'PASS' | 'FAIL') {
   listQuery.checkStatus = v
+  load()
+}
+
+function setListCategory(v: string) {
+  listQuery.category = v
   load()
 }
 
@@ -290,7 +294,7 @@ onMounted(async () => {
       <div v-if="!selected && !creating" class="mobile-check-list-view">
         <div class="mobile-check-list-toolbar">
           <div class="mobile-check-search">
-            <input v-model="listQuery.keyword" placeholder="商品名称 / 货号" @keyup.enter="doListQuery" />
+            <input v-model="listQuery.keyword" placeholder="商品名称 / 货号 / barcode" @keyup.enter="doListQuery" />
             <button @click="doListQuery">查询</button>
           </div>
           <button class="mobile-check-add-button" @click="openCreate">＋ 新增</button>
@@ -301,6 +305,10 @@ onMounted(async () => {
             <button :class="{active:listQuery.checkStatus==='FAIL'}" @click="setListStatus('FAIL')">异常 <span class="mobile-status-count">{{ statusTotals.FAIL }}</span></button>
             <button :class="{active:listQuery.checkStatus==='PASS'}" @click="setListStatus('PASS')">通过 <span class="mobile-status-count">{{ statusTotals.PASS }}</span></button>
           </div>
+          <select v-model="listQuery.category" class="mobile-check-category-filter" aria-label="Type" @change="setListCategory(listQuery.category)">
+            <option value="">Type</option>
+            <option v-for="x in CATEGORY_OPTIONS" :key="x" :value="x">{{ x }}</option>
+          </select>
         </div>
         <div v-if="loading" class="mobile-empty">加载中...</div>
         <div v-else-if="!rows.length" class="mobile-empty">当前没有未点货商品</div>
