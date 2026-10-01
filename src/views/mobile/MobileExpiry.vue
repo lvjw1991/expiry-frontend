@@ -2,6 +2,7 @@
 import { computed, onMounted, reactive, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import { FullScreen } from '@element-plus/icons-vue'
 import { createExpiryRecord, deleteExpiryRecord, getExpiryRecordsCalendar } from '../../api/expiryRecord'
 import MobileDatePicker from '../../components/MobileDatePicker.vue'
 import type { ConfirmStatus, ExpiryRecord, ProcessStatus } from '../../api/types'
@@ -194,12 +195,13 @@ onMounted(loadMonth)
           <label>Barcode <span class="required-star">*</span></label>
           <div class="mobile-display-row barcode-input-row">
             <input v-model="addForm.barcode" class="mobile-inline-value-input" placeholder="扫码或手动输入"/>
-            <button class="mobile-icon-button" type="button" aria-label="上传图片识别" @click="scannerRef?.openGallery()">🖼️</button>
+            <button class="mobile-icon-button" type="button" aria-label="扫码" @click="scannerRef?.openGallery()"><FullScreen /></button>
           </div>
         </div>
         <div class="mobile-display-field">
           <label>有效期 <span class="required-star">*</span></label>
-          <div class="mobile-display-row expiry-input-row">
+          <div class="mobile-display-row expiry-input-row expiry-add-date-row">
+            <span class="mobile-inline-value-text" :class="{ 'is-placeholder': !addForm.expiryDate }">{{ addForm.expiryDate || '请选择有效期' }}</span>
             <MobileDatePicker v-model="addForm.expiryDate" :min-date="todayDate" />
           </div>
         </div>

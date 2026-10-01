@@ -240,7 +240,6 @@ async function restoreSelected() {
 
 async function submitCreate() {
   if (!createForm.barcode.trim()) return ElMessage.warning('请输入 Barcode')
-  if (!createForm.category) return ElMessage.warning('请选择类型')
   if (isExpiryRequired(createForm.category) && !createForm.expiryDates.length) return ElMessage.warning('当前类型必须填写有效期')
   if (createForm.category === 'Drink' && !createForm.sugar) return ElMessage.warning('Drink 必须选择含糖等级')
   if (createForm.actualQty === undefined || createForm.actualQty === null) return ElMessage.warning('请填写实际来货个数')
@@ -336,7 +335,7 @@ onMounted(async () => {
 
           <div class="mobile-check-field mobile-display-field">
             <label>有效期 <span v-if="isExpiryRequired(form.category)" class="required-star">*</span></label>
-            <div class="mobile-display-row expiry-input-row">
+            <div class="mobile-display-row expiry-input-row" style="position: relative; left: 10px;">
               <div class="mobile-expiry-values">
                 <template v-if="form.expiryDates.length">
                   <span v-for="d in form.expiryDates" :key="d" class="mobile-expiry-chip">
@@ -427,7 +426,7 @@ onMounted(async () => {
 
           <div class="mobile-check-field mobile-display-field">
             <label>有效期 <span v-if="isExpiryRequired(createForm.category)" class="required-star">*</span></label>
-            <div class="mobile-display-row expiry-input-row">
+            <div class="mobile-display-row expiry-input-row" style="position: relative; left: 10px;">
               <div class="mobile-expiry-values">
                 <template v-if="createForm.expiryDates.length">
                   <span v-for="d in createForm.expiryDates" :key="d" class="mobile-expiry-chip">
@@ -442,7 +441,7 @@ onMounted(async () => {
           </div>
 
           <div class="mobile-check-field">
-            <label>类型 <span class="required-star">*</span></label>
+            <label>类型</label>
             <select v-model="createForm.category" class="compact-input">
               <option value="">请选择</option>
               <option v-for="x in CATEGORY_OPTIONS" :key="x" :value="x">{{ x }}</option>
