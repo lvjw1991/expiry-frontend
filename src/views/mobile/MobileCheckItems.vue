@@ -2,13 +2,14 @@
 import { onMounted, reactive, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import { Calendar, FullScreen } from '@element-plus/icons-vue'
+import { FullScreen } from '@element-plus/icons-vue'
 import { getReceivingOrder, getReceivingOrderItems, getReceivingOrderItem, checkReceivingItem, createReceivingItem } from '../../api/receivingOrder'
 import type { OrderItemListVO, ReceivingOrder, ReceivingOrderItemDetail } from '../../api/types'
 import MobileNav from './MobileNav.vue'
 import MobileBarcodeScanner from './MobileBarcodeScanner.vue'
 import { CATEGORY_OPTIONS, SUGAR_OPTIONS, isExpiryRequired } from '../../constants/productOptions'
 import DamageImageUpload from '../../components/DamageImageUpload.vue'
+import MobileDatePicker from '../../components/MobileDatePicker.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -18,8 +19,6 @@ const rows = ref<OrderItemListVO[]>([])
 const loading = ref(false)
 const scannerRef = ref<InstanceType<typeof MobileBarcodeScanner>>()
 const createScannerRef = ref<InstanceType<typeof MobileBarcodeScanner>>()
-const expiryInputRef = ref<HTMLInputElement>()
-const createExpiryInputRef = ref<HTMLInputElement>()
 const selected = ref<OrderItemListVO>()
 const selectedStorageKey = `mobile-check-selected-${id}`
 const saving = ref(false)
@@ -34,7 +33,7 @@ const todayDate = `${today.getFullYear()}-${pad(today.getMonth()+1)}-${pad(today
 const form = reactive({
   barcode: '',
   expiryDates: [] as string[],
-  newExpiry: '',
+  newExpiry: [] as string[],
   category: '',
   sugar: '',
   total: undefined as number | undefined,
@@ -50,7 +49,7 @@ const createForm = reactive({
   productName: '',
   barcode: '',
   expiryDates: [] as string[],
-  newExpiry: '',
+  newExpiry: [] as string[],
   category: '',
   sugar: '',
   actualQty: undefined as number | undefined,
@@ -115,7 +114,7 @@ async function pick(x: OrderItemListVO) {
     const detail = await getReceivingOrderItem(x.id)
     form.barcode = detail.barcode || ''
     form.expiryDates = detail.expiryDate ? detail.expiryDate.split(',').filter(Boolean) : []
-    form.newExpiry = ''
+    form.newExpiry = [...form.expiryDates]
     form.category = detail.category || ''
     form.sugar = detail.sugar || ''
     form.total = detail.total
@@ -139,36 +138,22 @@ function onCreateScan(v: string) {
   createForm.barcode = v
 }
 
-function openExpiryPicker() {
-  const el = expiryInputRef.value
-  if (!el) return
-  if (typeof el.showPicker === 'function') el.showPicker()
-  else el.click()
+function onExpiryDatesChange(value: string | string[]) {
+  form.expiryDates = Array.isArray(value) ? [...value] : value ? [value] : []
 }
 
-function openCreateExpiryPicker() {
-  const el = createExpiryInputRef.value
-  if (!el) return
-  if (typeof el.showPicker === 'function') el.showPicker()
-  else el.click()
-}
-
-function addExpiry() {
-  if (form.newExpiry && !form.expiryDates.includes(form.newExpiry)) form.expiryDates.push(form.newExpiry)
-  form.newExpiry = ''
+function onCreateExpiryDatesChange(value: string | string[]) {
+  createForm.expiryDates = Array.isArray(value) ? [...value] : value ? [value] : []
 }
 
 function removeExpiry(d: string) {
   form.expiryDates = form.expiryDates.filter(x => x !== d)
-}
-
-function addCreateExpiry() {
-  if (createForm.newExpiry && !createForm.expiryDates.includes(createForm.newExpiry)) createForm.expiryDates.push(createForm.newExpiry)
-  createForm.newExpiry = ''
+  form.newExpiry = [...form.expiryDates]
 }
 
 function removeCreateExpiry(d: string) {
   createForm.expiryDates = createForm.expiryDates.filter(x => x !== d)
+  createForm.newExpiry = [...createForm.expiryDates]
 }
 
 function validateForm() {
@@ -229,7 +214,7 @@ function openCreate() {
     productName: '',
     barcode: '',
     expiryDates: [],
-    newExpiry: '',
+    newExpiry: [],
     category: '',
     sugar: '',
     actualQty: undefined,
@@ -361,8 +346,7 @@ onMounted(async () => {
                 </template>
                 <span v-else class="mobile-placeholder">请选择有效期</span>
               </div>
-              <button type="button" class="mobile-icon-button" aria-label="选择有效期" @click="openExpiryPicker"><Calendar /></button>
-              <input ref="expiryInputRef" v-model="form.newExpiry" type="date" :min="todayDate" class="mobile-hidden-date-input" @change="addExpiry" />
+              <MobileDatePicker v-model="form.newExpiry" :min-date="todayDate" :multiple="true" placeholder="请选择有效期" @change="onExpiryDatesChange" />
             </div>
           </div>
 
@@ -453,8 +437,7 @@ onMounted(async () => {
                 </template>
                 <span v-else class="mobile-placeholder">请选择有效期</span>
               </div>
-              <button type="button" class="mobile-icon-button" aria-label="选择有效期" @click="openCreateExpiryPicker"><Calendar /></button>
-              <input ref="createExpiryInputRef" v-model="createForm.newExpiry" type="date" :min="todayDate" class="mobile-hidden-date-input" @change="addCreateExpiry" />
+              <MobileDatePicker v-model="createForm.newExpiry" :min-date="todayDate" :multiple="true" placeholder="请选择有效期" @change="onCreateExpiryDatesChange" />
             </div>
           </div>
 

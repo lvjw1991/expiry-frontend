@@ -3,6 +3,7 @@ import { computed, onMounted, reactive, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { createExpiryRecord, deleteExpiryRecord, getExpiryRecordsCalendar } from '../../api/expiryRecord'
+import MobileDatePicker from '../../components/MobileDatePicker.vue'
 import type { ConfirmStatus, ExpiryRecord, ProcessStatus } from '../../api/types'
 import MobileNav from './MobileNav.vue'
 import MobileBarcodeScanner from './MobileBarcodeScanner.vue'
@@ -199,7 +200,7 @@ onMounted(loadMonth)
         <div class="mobile-display-field">
           <label>有效期 <span class="required-star">*</span></label>
           <div class="mobile-display-row expiry-input-row">
-            <input v-model="addForm.expiryDate" class="mobile-display-date" type="date" :min="todayDate"/>
+            <MobileDatePicker v-model="addForm.expiryDate" :min-date="todayDate" />
           </div>
         </div>
         <label>类型</label>
