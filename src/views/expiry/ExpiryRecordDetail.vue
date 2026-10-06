@@ -3,12 +3,12 @@ import { onMounted, reactive, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { confirmExpiryRecord, deleteExpiryRecord, getExpiryRecord, processExpiryRecord, updateExpiryRecord } from '../../api/expiryRecord'
-import type { ExpiryRecord } from '../../api/types'
+import type { ExpiryRecordDetail } from '../../api/types'
 import BarcodeImage from '../../components/BarcodeImage.vue'
 
 import { CATEGORY_OPTIONS } from '../../constants/productOptions'
 const route = useRoute(); const router = useRouter()
-const record = ref<ExpiryRecord>(); const loading=ref(false); const saving=ref(false)
+const record = ref<ExpiryRecordDetail>(); const loading=ref(false); const saving=ref(false)
 const editVisible=ref(false); const editForm=reactive({barcode:'',expiryDate:'',category:'',productName:''})
 const processVisible=ref(false); const processSaving=ref(false); const processForm=reactive<{status:'NORMAL'|'PROMOTE'|'DAMAGE';remark:string;stock:number}>({status:'NORMAL',remark:'',stock:0})
 const confirmVisible=ref(false); const confirmForm=reactive<{status:'CONFIRM'|'NOT_FOUND';stock:number}>({status:'CONFIRM',stock:0})

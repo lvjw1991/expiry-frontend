@@ -3,12 +3,12 @@ import { onMounted, reactive, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { confirmExpiryRecord, getExpiryRecord, processExpiryRecord } from '../../api/expiryRecord'
-import type { ConfirmStatus, ExpiryRecord } from '../../api/types'
+import type { ConfirmStatus, ExpiryRecordDetail } from '../../api/types'
 import MobileNav from './MobileNav.vue'
 import BarcodeImage from '../../components/BarcodeImage.vue'
 
 const route=useRoute(); const router=useRouter(); const id=Number(route.params.id)
-const record=ref<ExpiryRecord>(); const loading=ref(false); const saving=ref(false)
+const record=ref<ExpiryRecordDetail>(); const loading=ref(false); const saving=ref(false)
 const confirmStatus=ref<'CONFIRM'|'NOT_FOUND'>('CONFIRM'); const stock=ref(0)
 const processStatus=ref<'NORMAL'|'PROMOTE'|'DAMAGE'>('NORMAL'); const processRemark=ref('')
 function confirmLabel(v?:string){return ({UNCONFIRM:'未确认',CONFIRM:'已确认',NOT_FOUND:'未找到'} as Record<string,string>)[v||'']||v||'-'}
