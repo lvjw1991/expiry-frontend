@@ -9,7 +9,7 @@ import BarcodeImage from '../../components/BarcodeImage.vue'
 import { CATEGORY_OPTIONS } from '../../constants/productOptions'
 const route = useRoute(); const router = useRouter()
 const record = ref<ExpiryRecord>(); const loading=ref(false); const saving=ref(false)
-const editVisible=ref(false); const editForm=reactive({barcode:'',expiryDate:'',category:'',productName:'',stock:0})
+const editVisible=ref(false); const editForm=reactive({barcode:'',expiryDate:'',category:'',productName:''})
 const processVisible=ref(false); const processSaving=ref(false); const processForm=reactive<{status:'NORMAL'|'PROMOTE'|'DAMAGE';remark:string;stock:number}>({status:'NORMAL',remark:'',stock:0})
 const confirmVisible=ref(false); const confirmForm=reactive<{status:'CONFIRM'|'NOT_FOUND';stock:number}>({status:'CONFIRM',stock:0})
 const id=Number(route.params.id)
@@ -19,7 +19,7 @@ function processLabel(v?:string){return ({UNPROCESS:'未处理',NORMAL:'正常�
 function fmt(v?:string){return v ? new Date(v).toLocaleString('zh-CN') : '-'}
 
 async function load(){loading.value=true;try{record.value=await getExpiryRecord(id)}catch(e:any){ElMessage.error(e.message||'加载失败')}finally{loading.value=false}}
-function openEdit(){if(!record.value)return;editForm.barcode=record.value.barcode;editForm.expiryDate=record.value.expiryDate;editForm.category=record.value.category||'';editForm.productName=record.value.productName||'';editForm.stock=record.value.stock??0;editVisible.value=true}
+function openEdit(){if(!record.value)return;editForm.barcode=record.value.barcode;editForm.expiryDate=record.value.expiryDate;editForm.category=record.value.category||'';editForm.productName=record.value.productName||'';editVisible.value=true}
 async function submitEdit(){if(!editForm.barcode||!editForm.expiryDate||!editForm.category||!editForm.productName.trim())return ElMessage.warning('Barcode、有效期、类型和商品名称不能为空');saving.value=true;try{await updateExpiryRecord(id,{...editForm});ElMessage.success('修改成功');editVisible.value=false;await load()}catch(e:any){ElMessage.error(e.message||'修改失败')}finally{saving.value=false}}
 function openConfirm(){confirmForm.status='CONFIRM';confirmForm.stock=record.value?.stock||0;confirmVisible.value=true}
 async function submitConfirm(){if(!record.value)return;saving.value=true;try{await confirmExpiryRecord(id,confirmForm.stock,confirmForm.status);ElMessage.success('确认成功');confirmVisible.value=false;await load()}catch(e:any){ElMessage.error(e.message||'确认失败')}finally{saving.value=false}}
@@ -38,6 +38,7 @@ onMounted(load)
       <el-descriptions-item label="ID">{{record.id}}</el-descriptions-item><el-descriptions-item label="Barcode">{{record.barcode}}</el-descriptions-item>
       <el-descriptions-item label="有效期">{{record.expiryDate}}</el-descriptions-item><el-descriptions-item label="库存">{{record.stock}}</el-descriptions-item>
       <el-descriptions-item label="类型">{{record.category||'-'}}</el-descriptions-item><el-descriptions-item label="商品名称">{{record.productName||'-'}}</el-descriptions-item>
+      <el-descriptions-item label="数据来源">{{record.sourceType==='RECEIVING'?'货单':record.sourceType==='MANUAL'?'手动':'-'}}</el-descriptions-item><el-descriptions-item label="创建时间">{{fmt(record.createdAt)}}</el-descriptions-item>
       <el-descriptions-item label="图片" :span="2"><el-image v-if="record.imgUrl" :src="record.imgUrl" style="width:100px;height:100px" fit="contain"/><span v-else>-</span></el-descriptions-item>
       <el-descriptions-item label="其他有效期" :span="2"><div v-if="record.otherDateList?.length" style="display:flex;gap:8px;flex-wrap:wrap"><el-tag v-for="date in record.otherDateList" :key="date" effect="plain">{{date}}</el-tag></div><span v-else>-</span></el-descriptions-item>
       <el-descriptions-item label="条形码" :span="2"><BarcodeImage :value="record.barcode"/></el-descriptions-item>
@@ -56,6 +57,6 @@ onMounted(load)
     <template #footer><el-button @click="processVisible=false">取消</el-button><el-button type="primary" :loading="processSaving" @click="submitProcess">保存</el-button></template>
   </el-dialog>
   <el-dialog v-model="confirmVisible" title="确认有效期记录" width="430px"><el-form label-width="90px"><el-form-item label="库存"><el-input-number v-model="confirmForm.stock" :min="0" :precision="0"/></el-form-item><el-form-item label="确认结果"><el-radio-group v-model="confirmForm.status"><el-radio value="CONFIRM">确认存在</el-radio><el-radio value="NOT_FOUND">未找到</el-radio></el-radio-group></el-form-item></el-form><template #footer><el-button @click="confirmVisible=false">取消</el-button><el-button type="primary" :loading="saving" @click="submitConfirm">确定</el-button></template></el-dialog>
-  <el-dialog v-model="editVisible" title="修改有效期记录" width="520px"><el-form label-width="90px"><el-form-item label="Barcode" required><el-input v-model="editForm.barcode" disabled/></el-form-item><el-form-item label="有效期" required><el-date-picker v-model="editForm.expiryDate" type="date" value-format="YYYY-MM-DD"/></el-form-item><el-form-item label="类型" required><el-select v-model="editForm.category" clearable style="width:100%"><el-option v-for="x in CATEGORY_OPTIONS" :key="x" :label="x" :value="x"/></el-select></el-form-item><el-form-item label="商品名称" required><el-input v-model="editForm.productName"/></el-form-item><el-form-item label="库存"><el-input-number v-model="editForm.stock" :min="0" :precision="0"/></el-form-item></el-form><template #footer><el-button @click="editVisible=false">取消</el-button><el-button type="primary" :loading="saving" @click="submitEdit">保存</el-button></template></el-dialog>
+  <el-dialog v-model="editVisible" title="修改有效期记录" width="520px"><el-form label-width="90px"><el-form-item label="Barcode" required><el-input v-model="editForm.barcode" disabled/></el-form-item><el-form-item label="有效期" required><el-date-picker v-model="editForm.expiryDate" type="date" value-format="YYYY-MM-DD"/></el-form-item><el-form-item label="类型" required><el-select v-model="editForm.category" clearable style="width:100%"><el-option v-for="x in CATEGORY_OPTIONS" :key="x" :label="x" :value="x"/></el-select></el-form-item><el-form-item label="商品名称" required><el-input v-model="editForm.productName"/></el-form-item></el-form><template #footer><el-button @click="editVisible=false">取消</el-button><el-button type="primary" :loading="saving" @click="submitEdit">保存</el-button></template></el-dialog>
 </div>
 </template>

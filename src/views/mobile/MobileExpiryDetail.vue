@@ -43,7 +43,7 @@ onMounted(load)
       <div class="mobile-detail-image-wrap"><img v-if="record.imgUrl" :src="record.imgUrl" alt="" class="mobile-detail-image"/><div v-else class="mobile-detail-image-placeholder">暂无图片</div></div>
       <section class="mobile-detail-card">
         <h2>{{record.productName||'-'}}</h2>
-        <div class="detail-grid"><div><span>Barcode</span><b>{{record.barcode}}</b></div><div><span>有效期</span><b>{{record.expiryDate}}</b></div><div><span>库存</span><b>{{record.stock}}</b></div><div><span>Category</span><b>{{record.category||'-'}}</b></div></div>
+        <div class="detail-grid"><div><span>Barcode</span><b>{{record.barcode}}</b></div><div><span>有效期</span><b>{{record.expiryDate}}</b></div><div><span>库存</span><b>{{record.stock}}</b></div><div><span>Category</span><b>{{record.category||'-'}}</b></div><div><span>数据来源</span><b>{{record.sourceType==='RECEIVING'?'货单':record.sourceType==='MANUAL'?'手动':'-'}}</b></div></div>
       </section>
       <section v-if="record.otherDateList?.length" class="mobile-detail-card">
         <h3>其他有效期</h3>

@@ -5,6 +5,7 @@ import ReceivingOrderDetail from './views/receiving/ReceivingOrderDetail.vue'
 import CheckGoods from './views/receiving/CheckGoods.vue'
 import ExpiryRecordList from './views/expiry/ExpiryRecordList.vue'
 import ExpiryRecordDetail from './views/expiry/ExpiryRecordDetail.vue'
+import ExpiryRecordSearch from './views/expiry/ExpiryRecordSearch.vue'
 import SupplierList from './views/supplier/SupplierList.vue'
 import SupplierProductList from './views/supplier/SupplierProductList.vue'
 import ProductList from './views/supplier/ProductList.vue'
@@ -13,6 +14,7 @@ import MobileCheckOrders from './views/mobile/MobileCheckOrders.vue'
 import MobileCheckItems from './views/mobile/MobileCheckItems.vue'
 import MobileExpiry from './views/mobile/MobileExpiry.vue'
 import MobileExpiryDetail from './views/mobile/MobileExpiryDetail.vue'
+import MobileExpirySearch from './views/mobile/MobileExpirySearch.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -25,6 +27,7 @@ const router = createRouter({
     { path: '/receiving-orders/:id', component: ReceivingOrderDetail, props: true, meta: { layout: 'desktop', platform: 'pc', requiresAuth: true } },
     { path: '/receiving-orders/:id/check', component: CheckGoods, props: true, meta: { layout: 'desktop', platform: 'pc', requiresAuth: true } },
     { path: '/expiry-records', component: ExpiryRecordList, meta: { layout: 'desktop', platform: 'pc', requiresAuth: true } },
+    { path: '/expiry-records/search', component: ExpiryRecordSearch, meta: { layout: 'desktop', platform: 'pc', requiresAuth: true } },
     { path: '/expiry-records/:id', component: ExpiryRecordDetail, meta: { layout: 'desktop', platform: 'pc', requiresAuth: true } },
     { path: '/suppliers', component: SupplierList, meta: { layout: 'desktop', platform: 'pc', requiresAuth: true } },
     { path: '/supplier-products', component: SupplierProductList, meta: { layout: 'desktop', platform: 'pc', requiresAuth: true } },
@@ -32,6 +35,7 @@ const router = createRouter({
     { path: '/m/check', component: MobileCheckOrders, meta: { layout: 'mobile', platform: 'mobile', requiresAuth: true } },
     { path: '/m/check/:id', component: MobileCheckItems, props: true, meta: { layout: 'mobile', platform: 'mobile', requiresAuth: true } },
     { path: '/m/expiry', component: MobileExpiry, meta: { layout: 'mobile', platform: 'mobile', requiresAuth: true } },
+    { path: '/m/expiry/search', component: MobileExpirySearch, meta: { layout: 'mobile', platform: 'mobile', requiresAuth: true } },
     { path: '/m/expiry/:id', component: MobileExpiryDetail, props: true, meta: { layout: 'mobile', platform: 'mobile', requiresAuth: true } }
   ]
 })

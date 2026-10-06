@@ -32,12 +32,15 @@ const query = reactive<{confirmStatus?:ConfirmStatus;processStatus?:ProcessStatu
 
 const addVisible = ref(false)
 const addSaving = ref(false)
-const addForm = reactive({ barcode: '', expiryDate: '', category: '', stock: 0 })
+const addForm = reactive({ barcode: '', expiryDate: '', category: '' })
 const todayDate = format(today)
 const scannerRef = ref<InstanceType<typeof MobileBarcodeScanner>>()
 
 function openAdd() {
-  Object.assign(addForm, { barcode: '', expiryDate: '', category: '', stock: 0 })
+  router.push('/m/expiry/search')
+}
+function openAddModal(barcode = '') {
+  Object.assign(addForm, { barcode, expiryDate: '', category: '' })
   addVisible.value = true
 }
 function onScan(v: string) { addForm.barcode = v }
@@ -135,7 +138,16 @@ function openDetail(row:ExpiryRecord){
 function confirmLabel(v?:string){return ({UNCONFIRM:'未确认',CONFIRM:'已确认',NOT_FOUND:'未找到'} as Record<string,string>)[v||'']||v||'-'}
 function processLabel(v?:string){return ({UNPROCESS:'未处理',NORMAL:'正常销售',PROMOTE:'促销',DAMAGE:'报损'} as Record<string,string>)[v||'']||v||'-'}
 
-onMounted(loadMonth)
+onMounted(() => {
+  loadMonth()
+  if (route.query.add === '1') {
+    openAddModal(String(route.query.barcode || ''))
+    const q = { ...route.query } as Record<string, any>
+    delete q.add
+    delete q.barcode
+    router.replace({ path: '/m/expiry', query: q })
+  }
+})
 </script>
 
 <template>
@@ -207,8 +219,6 @@ onMounted(loadMonth)
         </div>
         <label>类型</label>
         <select v-model="addForm.category"><option value="">请选择</option><option v-for="x in CATEGORY_OPTIONS" :key="x">{{x}}</option></select>
-        <label>库存</label>
-        <input v-model.number="addForm.stock" type="number" min="0" step="1" placeholder="0"/>
       </div>
       <div class="mobile-modal-actions">
         <button @click="addVisible=false">取消</button>

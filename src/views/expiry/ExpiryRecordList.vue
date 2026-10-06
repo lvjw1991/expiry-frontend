@@ -62,8 +62,8 @@ function syncRouteQuery() {
   router.replace({ path: '/expiry-records', query: q })
 }
 
-const editForm = reactive({ barcode: '', expiryDate: '', category: '', productName: '', stock: 0 })
-const addForm = reactive({ barcode: '', expiryDate: '', category: '', stock: 0 })
+const editForm = reactive({ barcode: '', expiryDate: '', category: '', productName: '' })
+const addForm = reactive({ barcode: '', expiryDate: '', category: '' })
 const processForm = reactive<{ status: 'NORMAL'|'PROMOTE'|'DAMAGE'; remark: string; stock: number }>({ status: 'NORMAL', remark: '', stock: 0 })
 const confirmForm = reactive<{ status: 'CONFIRM' | 'NOT_FOUND'; stock: number }>({ status: 'CONFIRM', stock: 0 })
 const importInput=ref<HTMLInputElement>()
@@ -148,7 +148,11 @@ async function submitProcess() {
 }
 
 function openAdd() {
-  Object.assign(addForm, { barcode: '', expiryDate: '', category: '', stock: 0 })
+  router.push('/expiry-records/search')
+}
+
+function openAddModal(barcode = '') {
+  Object.assign(addForm, { barcode, expiryDate: '', category: '' })
   addVisible.value = true
 }
 
@@ -169,7 +173,6 @@ function openEdit(row: ExpiryRecord) {
   editForm.expiryDate = row.expiryDate || ''
   editForm.category = row.category || ''
   editForm.productName = row.productName || ''
-  editForm.stock = row.stock ?? 0
   editVisible.value = true
 }
 
@@ -200,7 +203,16 @@ function formatDateTime(value?: string) {
   return value.replace('T', ' ').slice(0, 19)
 }
 
-onMounted(load)
+onMounted(() => {
+  load()
+  if (route.query.add === '1') {
+    openAddModal(String(route.query.barcode || ''))
+    const q = { ...route.query } as Record<string, any>
+    delete q.add
+    delete q.barcode
+    router.replace({ path: '/expiry-records', query: q })
+  }
+})
 </script>
 
 <template>
@@ -272,8 +284,7 @@ onMounted(load)
         <el-form-item label="Barcode" required><el-input v-model="addForm.barcode"/></el-form-item>
         <el-form-item label="有效期" required><el-date-picker v-model="addForm.expiryDate" type="date" value-format="YYYY-MM-DD"/></el-form-item>
         <el-form-item label="类型"><el-select v-model="addForm.category" clearable style="width:100%"><el-option v-for="x in CATEGORY_OPTIONS" :key="x" :label="x" :value="x"/></el-select></el-form-item>
-        <el-form-item label="库存"><el-input-number v-model="addForm.stock" :min="0" :precision="0"/></el-form-item>
-      </el-form>
+              </el-form>
       <template #footer><el-button @click="addVisible=false">取消</el-button><el-button type="primary" :loading="addSaving" @click="submitAdd">保存</el-button></template>
     </el-dialog>
 
@@ -283,7 +294,7 @@ onMounted(load)
         <el-form-item label="有效期" required><el-date-picker v-model="editForm.expiryDate" type="date" value-format="YYYY-MM-DD"/></el-form-item>
         <el-form-item label="类型" required><el-select v-model="editForm.category" clearable style="width:100%"><el-option v-for="x in CATEGORY_OPTIONS" :key="x" :label="x" :value="x"/></el-select></el-form-item>
         <el-form-item label="商品名称" required><el-input v-model="editForm.productName"/></el-form-item>
-        <el-form-item label="库存"><el-input-number v-model="editForm.stock" :min="0" :precision="0"/></el-form-item>
+        
       </el-form>
       <template #footer><el-button @click="editVisible=false">取消</el-button><el-button type="primary" :loading="editSaving" @click="submitEdit">保存</el-button></template>
     </el-dialog>
