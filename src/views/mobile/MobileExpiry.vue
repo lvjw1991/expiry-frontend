@@ -207,7 +207,7 @@ onMounted(() => {
           <label>Barcode <span class="required-star">*</span></label>
           <div class="mobile-display-row barcode-input-row">
             <input v-model="addForm.barcode" class="mobile-inline-value-input" placeholder="扫码或手动输入"/>
-            <button class="mobile-icon-button" type="button" aria-label="扫码" @click="scannerRef?.openGallery()"><FullScreen /></button>
+            <button class="mobile-icon-button" type="button" aria-label="扫码" @click="scannerRef?.open()"><FullScreen /></button>
           </div>
         </div>
         <div class="mobile-display-field">
