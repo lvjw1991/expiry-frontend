@@ -36,8 +36,12 @@ const addForm = reactive({ barcode: '', expiryDate: '', category: '' })
 const todayDate = format(today)
 const scannerRef = ref<InstanceType<typeof MobileBarcodeScanner>>()
 
-function openAdd() {
+function openSearch() {
   router.push('/m/expiry/search')
+}
+
+function openAdd() {
+  openAddModal()
 }
 function openAddModal(barcode = '') {
   Object.assign(addForm, { barcode, expiryDate: '', category: '' })
@@ -152,7 +156,7 @@ onMounted(() => {
 
 <template>
 <div class="mobile-page">
-  <div class="mobile-topbar"><b>📅 有效期</b><button class="mobile-topbar-action" @click="openAdd">＋ 新增</button></div>
+  <div class="mobile-topbar"><button class="mobile-topbar-left-action" @click="openSearch">🔍 查询</button><b>📅 有效期</b><button class="mobile-topbar-action" @click="openAdd">＋ 新增</button></div>
   <main class="mobile-content">
     <div class="today-expiry"><span>今日到期</span><strong>{{todayCount}}</strong><small>件</small></div>
 

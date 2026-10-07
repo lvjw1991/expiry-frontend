@@ -148,7 +148,7 @@ async function submitProcess() {
 }
 
 function openAdd() {
-  router.push('/expiry-records/search')
+  openAddModal()
 }
 
 function openAddModal(barcode = '') {
