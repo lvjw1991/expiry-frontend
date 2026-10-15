@@ -12,3 +12,9 @@ export function importProducts(file: File) {
   form.append('file', file)
   return http.post<ProductImportResult>('/products/import', form)
 }
+
+export function importProductPrices(file: File) {
+  const form = new FormData()
+  form.append('file', file)
+  return http.post<ProductImportResult>('/products/import-price', form)
+}

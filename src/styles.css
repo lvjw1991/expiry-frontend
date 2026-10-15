@@ -146,3 +146,14 @@ body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-s
 .item-bbd{display:block;margin-top:3px;color:#67c23a;font-size:12px;font-weight:500}.mobile-check-item-bbd{color:#67c23a;font-size:13px}.near-expiry-bbd{color:#f56c6c !important}.damage-remark{width:100%;box-sizing:border-box;resize:vertical}
 
 .mobile-other-dates{display:flex;flex-wrap:wrap;gap:7px}.mobile-other-dates span{display:inline-flex;align-items:center;padding:6px 9px;border-radius:8px;background:#f5f7fa;color:#303133;font-size:13px}
+
+
+/* v0.7.42: prevent iOS automatic zoom when the mobile date picker receives focus.
+   Keep date picker controls at 16px on touch devices; preserve existing visual layout. */
+@media (hover: none) and (pointer: coarse) {
+  .mobile-date-picker input,
+  .mobile-date-picker .el-input__inner,
+  .mobile-date-picker .el-range-input {
+    font-size: 16px !important;
+  }
+}

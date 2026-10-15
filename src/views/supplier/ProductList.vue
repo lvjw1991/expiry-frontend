@@ -1,14 +1,16 @@
 <script setup lang="ts">
 import { onMounted, reactive, ref } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { getProducts, importProducts } from '../../api/product'
+import { getProducts, importProducts, importProductPrices } from '../../api/product'
 import type { Product } from '../../api/types'
 
 const rows = ref<Product[]>([])
 const total = ref(0)
 const loading = ref(false)
-const importing = ref(false)
-const importInput = ref<HTMLInputElement>()
+const importingWoltImages = ref(false)
+const importingPosPrices = ref(false)
+const woltImportInput = ref<HTMLInputElement>()
+const posPriceImportInput = ref<HTMLInputElement>()
 const page = reactive({ pageNum: 0, pageSize: 20 })
 
 async function load() {
@@ -24,28 +26,39 @@ async function load() {
   }
 }
 
-function chooseImport() {
-  importInput.value?.click()
+function chooseWoltImport() {
+  woltImportInput.value?.click()
 }
 
-async function onImport(e: Event) {
+function choosePosPriceImport() {
+  posPriceImportInput.value?.click()
+}
+
+async function onImport(e: Event, type: 'wolt' | 'pos-price') {
   const input = e.target as HTMLInputElement
   const file = input.files?.[0]
   if (!file) return
-  importing.value = true
+
+  const isPosPrice = type === 'pos-price'
+  if (isPosPrice) importingPosPrices.value = true
+  else importingWoltImages.value = true
+
   try {
-    const result = await importProducts(file)
+    const result = isPosPrice
+      ? await importProductPrices(file)
+      : await importProducts(file)
     await ElMessageBox.alert(
       `<div style="line-height:2"><div><b>Success:</b> ${result?.success ?? 0}</div><div><b>Skip:</b> ${result?.skip ?? 0}</div></div>`,
-      '商品导入完成',
+      isPosPrice ? 'POS进价导入完成' : 'Wolt图片导入完成',
       { dangerouslyUseHTMLString: true, confirmButtonText: '确定' }
     )
     page.pageNum = 0
     await load()
   } catch (e: any) {
-    ElMessage.error(e.message || '商品导入失败')
+    ElMessage.error(e.message || (isPosPrice ? 'POS进价导入失败' : 'Wolt图片导入失败'))
   } finally {
-    importing.value = false
+    if (isPosPrice) importingPosPrices.value = false
+    else importingWoltImages.value = false
     input.value = ''
   }
 }
@@ -58,8 +71,10 @@ onMounted(load)
     <div class="page-title">
       <div><h2>商品管理</h2><p>商品基础资料，图片使用 Wolt 外链</p></div>
       <div>
-        <el-button type="primary" :loading="importing" @click="chooseImport">导入商品</el-button>
-        <input ref="importInput" type="file" accept=".xlsx,.xls" hidden @change="onImport" />
+        <el-button :loading="importingWoltImages" @click="chooseWoltImport">导入Wolt图片</el-button>
+        <input ref="woltImportInput" type="file" accept=".xlsx,.xls" hidden @change="onImport($event, 'wolt')" />
+        <el-button type="primary" :loading="importingPosPrices" @click="choosePosPriceImport">导入POS进价</el-button>
+        <input ref="posPriceImportInput" type="file" accept=".xlsx,.xls" hidden @change="onImport($event, 'pos-price')" />
       </div>
     </div>
 
