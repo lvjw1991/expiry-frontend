@@ -5,7 +5,7 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import { createReceivingOrder, getReceivingOrders, completeReceivingOrder, exportReceivingItems } from '../../api/receivingOrder'
 import { getSuppliers } from '../../api/supplier'
 import type { ReceivingOrder, Supplier } from '../../api/types'
-const router=useRouter(); const route=useRoute(); const loading=ref(false); const dialogVisible=ref(false); const suppliers=ref<Supplier[]>([]); const rows=ref<ReceivingOrder[]>([]); const total=ref(0)
+const router=useRouter(); const route=useRoute(); const loading=ref(false); const exportingOrderId=ref<number | null>(null); const dialogVisible=ref(false); const suppliers=ref<Supplier[]>([]); const rows=ref<ReceivingOrder[]>([]); const total=ref(0)
 const query=reactive({
   pageNum:Number(route.query.pageNum)||0,
   pageSize:Number(route.query.pageSize)||10,
@@ -26,7 +26,7 @@ const form=reactive({supplierId:undefined as number|undefined,number:undefined a
 async function load(){loading.value=true;try{const d=await getReceivingOrders(query);rows.value=d.list||[];total.value=d.total||0}catch(e:any){ElMessage.error(e.message||'加载失败')}finally{loading.value=false}}
 async function loadSuppliers(){try{const d=await getSuppliers({pageNum:0,pageSize:20});suppliers.value=d.list||[]}catch(e:any){ElMessage.error(e.message||'供应商加载失败')}}
 function reset(){Object.assign(query,{pageNum:0,supplierId:undefined,startDate:'',endDate:''});syncRouteQuery();load()}
-async function exportOrder(row:ReceivingOrder){try{const {blob,filename}=await exportReceivingItems(row.id);const u=URL.createObjectURL(blob);const a=document.createElement('a');a.href=u;a.download=filename||`收货单_${row.id}_明细.xlsx`;a.click();URL.revokeObjectURL(u);ElMessage.success('导出成功')}catch(e:any){ElMessage.error(e.message||'导出失败')}}
+async function exportOrder(row:ReceivingOrder){if(exportingOrderId.value!==null)return;exportingOrderId.value=row.id;try{const {blob,filename}=await exportReceivingItems(row.id);const u=URL.createObjectURL(blob);const a=document.createElement('a');a.href=u;a.download=filename||`收货单_${row.id}_明细.xlsx`;a.click();URL.revokeObjectURL(u);ElMessage.success('导出成功')}catch(e:any){ElMessage.error(e.message||'导出失败')}finally{exportingOrderId.value=null}}
 async function completeOrder(row:ReceivingOrder){try{await ElMessageBox.confirm(`确定完成收货单 #${row.id} 的点货吗？`,'完成点货',{type:'warning'});await completeReceivingOrder(row.id);ElMessage.success('点货已完成');load()}catch(e:any){if(e!=='cancel'&&e!=='close')ElMessage.error(e.message||'完成点货失败')}}
 async function create(){if(!form.supplierId)return ElMessage.warning('请选择供应商');try{const order=await createReceivingOrder({...form,supplierId:form.supplierId});dialogVisible.value=false;Object.assign(form,{supplierId:undefined,number:undefined,receiveDate:'',temperature:'',transport:''});ElMessage.success('创建成功');router.push(`/receiving-orders/${order.id}`)}catch(e:any){ElMessage.error(e.message||'创建失败')}}
 function pt(v:string){return v==='COMPLETED'?'success':v==='CHECKING'?'warning':v==='DRAFT'?'info':'primary'}
@@ -37,7 +37,7 @@ onMounted(()=>{load();loadSuppliers()})
 <el-table-column label="操作" width="220" fixed="right">
 <template #default="{row}">
 <el-button link type="primary" @click="router.push({path:`/receiving-orders/${row.id}`,query:route.query})">详情</el-button>
-<el-button link type="success" @click="exportOrder(row)">导出</el-button>
+<el-button link type="success" :loading="exportingOrderId===row.id" :disabled="exportingOrderId!==null" @click="exportOrder(row)">导出</el-button>
 <template v-if="row.progress!=='COMPLETED'">
 <el-button link type="success" @click="router.push({path:`/receiving-orders/${row.id}/check`,query:route.query})">点货</el-button>
 <el-button link type="warning" @click="completeOrder(row)">完成</el-button>

@@ -71,9 +71,9 @@ onMounted(load)
     <div class="page-title">
       <div><h2>商品管理</h2><p>商品基础资料，图片使用 Wolt 外链</p></div>
       <div>
-        <el-button :loading="importingWoltImages" @click="chooseWoltImport">导入Wolt图片</el-button>
+        <el-button :loading="importingWoltImages" :disabled="importingPosPrices" @click="chooseWoltImport">导入Wolt图片</el-button>
         <input ref="woltImportInput" type="file" accept=".xlsx,.xls" hidden @change="onImport($event, 'wolt')" />
-        <el-button type="primary" :loading="importingPosPrices" @click="choosePosPriceImport">导入POS进价</el-button>
+        <el-button type="primary" :loading="importingPosPrices" :disabled="importingWoltImages" @click="choosePosPriceImport">导入POS进价</el-button>
         <input ref="posPriceImportInput" type="file" accept=".xlsx,.xls" hidden @change="onImport($event, 'pos-price')" />
       </div>
     </div>

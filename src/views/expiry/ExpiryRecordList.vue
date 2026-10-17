@@ -217,7 +217,7 @@ onMounted(() => {
 
 <template>
   <div>
-    <div class="page-title"><div><h2>有效期管理</h2><p>先确认商品是否存在，再进行处理；未找到同样可以进入处理流程。</p></div><div><el-button type="primary" @click="openAdd">新增</el-button><el-button :loading="importing" @click="chooseImport">导入库存</el-button><input ref="importInput" type="file" accept=".xlsx,.xls" hidden @change="onImport"/></div></div>
+    <div class="page-title"><div><h2>有效期管理</h2><p>先确认商品是否存在，再进行处理；未找到同样可以进入处理流程。</p></div><div><el-button type="primary" @click="openAdd">新增</el-button><el-button :loading="importing" :disabled="importing" @click="chooseImport">导入库存</el-button><input ref="importInput" type="file" accept=".xlsx,.xls" hidden @change="onImport"/></div></div>
     <el-card shadow="never">
       <el-form :inline="true" :model="query">
         <el-form-item label="Barcode"><el-input v-model="query.barcode" clearable /></el-form-item>
