@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, reactive, ref } from 'vue'
+import { onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { FullScreen } from '@element-plus/icons-vue'
@@ -26,6 +26,9 @@ const creating = ref(false)
 const createSaving = ref(false)
 const listQuery = reactive({ keyword: '', category: '', checkStatus: 'UNCHECKED' as 'UNCHECKED' | 'PASS' | 'FAIL' })
 const statusTotals = reactive({ UNCHECKED: 0, FAIL: 0, PASS: 0 })
+let keywordTimer: ReturnType<typeof setTimeout> | undefined
+let listRequestSeq = 0
+let lastListRequestKey = ''
 const today = new Date()
 const pad = (n:number) => String(n).padStart(2, '0')
 const todayDate = `${today.getFullYear()}-${pad(today.getMonth()+1)}-${pad(today.getDate())}`
@@ -91,24 +94,56 @@ async function load() {
     statusTotals.PASS = passCount.total ?? 0
 
     rows.value = d.list || []
+    lastListRequestKey = JSON.stringify({ orderId: id, keyword: listQuery.keyword.trim() || undefined, category: listQuery.category || undefined, pageNum: 0, pageSize: 50, checkStatus: listQuery.checkStatus })
   } catch (e: any) {
     ElMessage.error(e.message || '加载失败')
   } finally {
     loading.value = false
   }
 }
-function doListQuery() {
-  load()
+async function loadList(force = false) {
+  const params = {
+    orderId: id,
+    keyword: listQuery.keyword.trim() || undefined,
+    category: listQuery.category || undefined,
+    pageNum: 0,
+    pageSize: 50,
+    checkStatus: listQuery.checkStatus
+  }
+  const requestKey = JSON.stringify(params)
+  if (!force && requestKey === lastListRequestKey) return
+  lastListRequestKey = requestKey
+  const requestSeq = ++listRequestSeq
+  loading.value = true
+  try {
+    const data = await getMobileItems(params)
+    if (requestSeq !== listRequestSeq) return
+    rows.value = data.list || []
+  } catch (e: any) {
+    if (requestSeq === listRequestSeq) ElMessage.error(e.message || '查询失败')
+  } finally {
+    if (requestSeq === listRequestSeq) loading.value = false
+  }
 }
+
+function doListQuery() {
+  if (keywordTimer) clearTimeout(keywordTimer)
+  loadList()
+}
+
+watch(() => listQuery.keyword, () => {
+  if (keywordTimer) clearTimeout(keywordTimer)
+  keywordTimer = setTimeout(() => loadList(), 300)
+})
 
 function setListStatus(v: 'UNCHECKED' | 'PASS' | 'FAIL') {
   listQuery.checkStatus = v
-  load()
+  loadList()
 }
 
 function setListCategory(v: string) {
   listQuery.category = v
-  load()
+  loadList()
 }
 
 async function pick(x: OrderItemListVO) {
@@ -277,7 +312,13 @@ async function submitCreate() {
 
 onMounted(async () => {
   await load()
+  lastListRequestKey = JSON.stringify({ orderId: id, keyword: listQuery.keyword.trim() || undefined, category: listQuery.category || undefined, pageNum: 0, pageSize: 50, checkStatus: listQuery.checkStatus })
   await restoreSelected()
+})
+
+onBeforeUnmount(() => {
+  if (keywordTimer) clearTimeout(keywordTimer)
+  listRequestSeq++
 })
 </script>
 
@@ -295,7 +336,6 @@ onMounted(async () => {
         <div class="mobile-check-list-toolbar">
           <div class="mobile-check-search">
             <input v-model="listQuery.keyword" placeholder="商品名称 / 货号 / barcode" @keyup.enter="doListQuery" />
-            <button @click="doListQuery">查询</button>
           </div>
           <button class="mobile-check-add-button" @click="openCreate">＋ 新增</button>
         </div>
@@ -337,13 +377,13 @@ onMounted(async () => {
             <label>Barcode <span class="required-star">*</span></label>
             <div class="mobile-display-row barcode-input-row">
               <input v-model="form.barcode" class="mobile-inline-value-input" placeholder="请输入或扫码" inputmode="numeric" />
-              <button type="button" class="mobile-icon-button" aria-label="扫码" @click="scannerRef?.open()"><FullScreen /></button>
+              <button style="padding-right: 20px;" type="button" class="mobile-icon-button" aria-label="扫码" @click="scannerRef?.open()"><FullScreen /></button>
             </div>
           </div>
 
           <div class="mobile-check-field mobile-display-field">
             <label>有效期 <span v-if="isExpiryRequired(form.category)" class="required-star">*</span></label>
-            <div class="mobile-display-row expiry-input-row" style="position: relative; left: 10px;">
+            <div class="mobile-display-row expiry-input-row">
               <div class="mobile-expiry-values">
                 <template v-if="form.expiryDates.length">
                   <span v-for="d in form.expiryDates" :key="d" class="mobile-expiry-chip">
@@ -428,13 +468,13 @@ onMounted(async () => {
             <label>Barcode <span class="required-star">*</span></label>
             <div class="mobile-display-row barcode-input-row">
               <input v-model="createForm.barcode" class="mobile-inline-value-input" placeholder="请输入或扫码" inputmode="numeric" />
-              <button type="button" class="mobile-icon-button" aria-label="扫码" @click="createScannerRef?.open()"><FullScreen /></button>
+              <button style="padding-right: 20px;" type="button" class="mobile-icon-button" aria-label="扫码" @click="createScannerRef?.open()"><FullScreen /></button>
             </div>
           </div>
 
           <div class="mobile-check-field mobile-display-field">
             <label>有效期 <span v-if="isExpiryRequired(createForm.category)" class="required-star">*</span></label>
-            <div class="mobile-display-row expiry-input-row" style="position: relative; left: 10px;">
+            <div class="mobile-display-row expiry-input-row">
               <div class="mobile-expiry-values">
                 <template v-if="createForm.expiryDates.length">
                   <span v-for="d in createForm.expiryDates" :key="d" class="mobile-expiry-chip">
