@@ -58,8 +58,11 @@ const createForm = reactive({
   actualQty: undefined as number | undefined,
   damageQty: 0 as number | undefined,
   remark: '',
+  otherBoxQty: 0 as number,
   damageImgList: [] as string[]
 })
+
+const detailOtherBoxQty = ref(0)
 
 function isNearExpiry(value?: string) {
   if (!value) return false
@@ -160,6 +163,7 @@ async function pick(x: OrderItemListVO) {
     form.actualQty = detail.actualQty
     form.damageQty = detail.damageQty ?? 0
     form.remark = detail.remark || ''
+    detailOtherBoxQty.value = Number((detail as ReceivingOrderItemDetail).otherBoxQty || 0)
     form.damageImgList = detail.damageImgList ? [...detail.damageImgList] : []
     form.status = detail.checkStatus === 'FAIL' ? 'FAIL' : 'PASS'
   } catch (e:any) {
@@ -196,7 +200,7 @@ function removeCreateExpiry(d: string) {
 }
 
 function validateForm() {
-  if (form.total === undefined || form.total === null || form.total < 0) return '请填写应到个数'
+  if (form.total === undefined || form.total === null || form.total < 0) return '请填写录入库存'
   if (!form.barcode.trim()) return '请扫码录入 Barcode'
   if (isExpiryRequired(form.category) && !form.expiryDates.length) return '当前类型必须填写有效期'
   if (form.category === 'Drink' && !form.sugar) return 'Drink 必须选择含糖等级'
@@ -223,7 +227,7 @@ async function save() {
       category: form.category || undefined,
       sugar: form.category === 'Drink' ? form.sugar : undefined,
       status: form.status,
-      remark: form.status === 'FAIL' ? (form.remark.trim() || undefined) : undefined,
+      remark: form.remark.trim() || undefined,
       damageImgList: form.status === 'FAIL' ? form.damageImgList : []
     })
     ElMessage.success('点货成功')
@@ -259,6 +263,7 @@ function openCreate() {
     actualQty: undefined,
     damageQty: 0,
     remark: '',
+    otherBoxQty: 0,
     damageImgList: []
   })
   creating.value = true
@@ -292,6 +297,7 @@ async function submitCreate() {
       productName: createForm.productName.trim() || undefined,
       barcode: createForm.barcode.trim(),
       actualQty: createForm.actualQty,
+      otherBoxQty: createForm.otherBoxQty,
       damageQty: createForm.damageQty ?? 0,
       expiryDate: createForm.expiryDates,
       category: createForm.category || undefined,
@@ -368,11 +374,19 @@ onBeforeUnmount(() => {
           <div class="mobile-check-product-code">{{ selected.supplierCode || '-' }}</div>
           <div class="mobile-check-qty-grid">
             <div><span>订单箱数</span><strong>{{ selected.orderQty ?? '-' }}</strong><em>箱</em></div>
-            <div class="mobile-edit-total"><span>应到个数</span><input v-model.number="form.total" type="number" min="0" step="1" inputmode="numeric" aria-label="应到个数" /><em>个</em></div>
+            <div class="mobile-edit-total"><span>录入库存</span><input v-model.number="form.total" type="number" min="0" step="1" inputmode="numeric" aria-label="录入库存" /><em>个</em></div>
           </div>
         </section>
 
         <section class="mobile-check-form-card">
+          <div v-if="detailOtherBoxQty > 0" class="mobile-check-field mobile-display-field">
+            <label>其它店箱数</label>
+            <div class="mobile-display-row"><span>{{ detailOtherBoxQty }}</span></div>
+          </div>
+          <div v-if="detailOtherBoxQty > 0" class="mobile-check-field">
+            <label>备注</label>
+            <textarea v-model="form.remark" class="compact-input damage-remark" rows="3" maxlength="500"></textarea>
+          </div>
           <div class="mobile-check-field mobile-display-field">
             <label>Barcode <span class="required-star">*</span></label>
             <div class="mobile-display-row barcode-input-row">
@@ -432,9 +446,9 @@ onBeforeUnmount(() => {
             </div>
           </div>
 
-          <div v-if="form.status === 'FAIL'" class="mobile-check-field">
+          <div v-if="form.status === 'FAIL' && detailOtherBoxQty <= 0" class="mobile-check-field">
             <label>备注</label>
-            <textarea v-model="form.remark" class="compact-input damage-remark" rows="3" maxlength="500" placeholder="请输入破损备注"></textarea>
+            <textarea v-model="form.remark" class="compact-input damage-remark" rows="3" maxlength="500"></textarea>
           </div>
           <div v-if="form.status === 'FAIL'" class="mobile-check-field">
             <label>破损图片</label>
@@ -504,6 +518,11 @@ onBeforeUnmount(() => {
             </select>
           </div>
 
+          <div class="mobile-check-field">
+            <label>其它店箱数</label>
+            <input v-model.number="createForm.otherBoxQty" type="number" min="0" step="1" class="compact-input" inputmode="numeric" />
+          </div>
+
           <div class="mobile-check-qty-inputs">
             <div class="mobile-check-field">
               <label>实际来货个数 <span class="required-star">*</span></label>
@@ -517,7 +536,7 @@ onBeforeUnmount(() => {
 
           <div class="mobile-check-field">
             <label>备注</label>
-            <textarea v-model="createForm.remark" class="compact-input damage-remark" rows="3" maxlength="500" placeholder="请输入破损备注"></textarea>
+            <textarea v-model="createForm.remark" class="compact-input damage-remark" rows="3" maxlength="500"></textarea>
           </div>
           <div class="mobile-check-field">
             <label>破损图片</label>

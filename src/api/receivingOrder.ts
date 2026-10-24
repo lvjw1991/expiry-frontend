@@ -15,7 +15,7 @@ export function getReceivingOrderItem(id:number){return http.get<ReceivingOrderI
 export interface ImportResult { success:number; skip:number }
 export function importReceivingOrderExcel(orderId:number,file:File){const form=new FormData();form.append('file',file);return http.post<ImportResult>('/orders/import?orderId='+encodeURIComponent(String(orderId)),form)}
 export function checkReceivingItem(itemId:number,data:{barcode:string;total?:number;actualQty?:number;damageQty?:number;expiryDate?:string[];category?:string;sugar?:string;status:'UNCHECKED'|'PASS'|'FAIL';remark?:string;damageImgList?:string[]}){return http.post<boolean>(`/items/${itemId}/check`,data)}
-export interface CreateItemRequest { receivingOrderId:number; barcode?:string; productName?:string; supplierCode?:string; category?:string; sugar?:string; actualQty?:number; damageQty?:number; expiryDate?:string[]; status?:'UNCHECKED'|'PASS'|'FAIL'; remark?:string; damageImgList?:string[] }
+export interface CreateItemRequest { receivingOrderId:number; barcode?:string; productName?:string; supplierCode?:string; category?:string; sugar?:string; actualQty?:number; otherBoxQty?:number; damageQty?:number; expiryDate?:string[]; status?:'UNCHECKED'|'PASS'|'FAIL'; remark?:string; damageImgList?:string[] }
 export function createReceivingItem(data:CreateItemRequest){return http.post<ReceivingOrderItemDetail>('/items',data)}
 export function uploadDamageImage(file:File){const form=new FormData();form.append('file',file);return http.post<string>('/damages/upload',form)}
 export function exportReceivingItems(orderId:number){return http.download(`/items/export/${orderId}`)}
