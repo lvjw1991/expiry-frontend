@@ -2,6 +2,8 @@ import { createRouter, createWebHistory } from 'vue-router'
 import Login from './views/Login.vue'
 import ReceivingOrderList from './views/receiving/ReceivingOrderList.vue'
 import ReceivingOrderDetail from './views/receiving/ReceivingOrderDetail.vue'
+import ItemBarcodeHistory from './views/receiving/ItemBarcodeHistory.vue'
+import ItemBarcodeHistoryDetail from './views/receiving/ItemBarcodeHistoryDetail.vue'
 import CheckGoods from './views/receiving/CheckGoods.vue'
 import ExpiryRecordList from './views/expiry/ExpiryRecordList.vue'
 import ExpiryRecordDetail from './views/expiry/ExpiryRecordDetail.vue'
@@ -24,6 +26,8 @@ const router = createRouter({
     { path: '/m', redirect: '/m/check' },
     { path: '/', redirect: '/receiving-orders' },
     { path: '/receiving-orders', component: ReceivingOrderList, meta: { layout: 'desktop', platform: 'pc', requiresAuth: true } },
+    { path: '/item-barcode-history', component: ItemBarcodeHistory, meta: { layout: 'desktop', platform: 'pc', requiresAuth: true } },
+    { path: '/item-barcode-history/:id', component: ItemBarcodeHistoryDetail, meta: { layout: 'desktop', platform: 'pc', requiresAuth: true } },
     { path: '/receiving-orders/:id', component: ReceivingOrderDetail, props: true, meta: { layout: 'desktop', platform: 'pc', requiresAuth: true } },
     { path: '/receiving-orders/:id/check', component: CheckGoods, props: true, meta: { layout: 'desktop', platform: 'pc', requiresAuth: true } },
     { path: '/expiry-records', component: ExpiryRecordList, meta: { layout: 'desktop', platform: 'pc', requiresAuth: true } },
