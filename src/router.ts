@@ -11,6 +11,7 @@ import ExpiryRecordSearch from './views/expiry/ExpiryRecordSearch.vue'
 import SupplierList from './views/supplier/SupplierList.vue'
 import SupplierProductList from './views/supplier/SupplierProductList.vue'
 import ProductList from './views/supplier/ProductList.vue'
+import ProductCategoryManagement from './views/supplier/ProductCategoryManagement.vue'
 import MobileLogin from './views/mobile/MobileLogin.vue'
 import MobileCheckOrders from './views/mobile/MobileCheckOrders.vue'
 import MobileCheckItems from './views/mobile/MobileCheckItems.vue'
@@ -36,6 +37,7 @@ const router = createRouter({
     { path: '/suppliers', component: SupplierList, meta: { layout: 'desktop', platform: 'pc', requiresAuth: true } },
     { path: '/supplier-products', component: SupplierProductList, meta: { layout: 'desktop', platform: 'pc', requiresAuth: true } },
     { path: '/products', component: ProductList, meta: { layout: 'desktop', platform: 'pc', requiresAuth: true } },
+    { path: '/products/category-management', component: ProductCategoryManagement, meta: { layout: 'desktop', platform: 'pc', requiresAuth: true } },
     { path: '/m/check', component: MobileCheckOrders, meta: { layout: 'mobile', platform: 'mobile', requiresAuth: true } },
     { path: '/m/check/:id', component: MobileCheckItems, props: true, meta: { layout: 'mobile', platform: 'mobile', requiresAuth: true } },
     { path: '/m/expiry', component: MobileExpiry, meta: { layout: 'mobile', platform: 'mobile', requiresAuth: true } },

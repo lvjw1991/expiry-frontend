@@ -1,9 +1,11 @@
 <script setup lang="ts">
 import { onMounted, reactive, ref } from 'vue'
+import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { getProducts, importProducts, importProductPrices } from '../../api/product'
 import type { Product } from '../../api/types'
 
+const router = useRouter()
 const rows = ref<Product[]>([])
 const total = ref(0)
 const loading = ref(false)
@@ -71,6 +73,7 @@ onMounted(load)
     <div class="page-title">
       <div><h2>商品管理</h2><p>商品基础资料，图片使用 Wolt 外链</p></div>
       <div>
+        <el-button @click="router.push('/products/category-management')">批量分类</el-button>
         <el-button :loading="importingWoltImages" :disabled="importingPosPrices" @click="chooseWoltImport">导入Wolt图片</el-button>
         <input ref="woltImportInput" type="file" accept=".xlsx,.xls" hidden @change="onImport($event, 'wolt')" />
         <el-button type="primary" :loading="importingPosPrices" :disabled="importingWoltImages" @click="choosePosPriceImport">导入POS进价</el-button>
