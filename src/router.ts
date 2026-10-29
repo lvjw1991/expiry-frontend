@@ -12,6 +12,7 @@ import SupplierList from './views/supplier/SupplierList.vue'
 import SupplierProductList from './views/supplier/SupplierProductList.vue'
 import ProductList from './views/supplier/ProductList.vue'
 import ProductCategoryManagement from './views/supplier/ProductCategoryManagement.vue'
+import PurchaseRecommendationList from './views/supplier/PurchaseRecommendationList.vue'
 import MobileLogin from './views/mobile/MobileLogin.vue'
 import MobileCheckOrders from './views/mobile/MobileCheckOrders.vue'
 import MobileCheckItems from './views/mobile/MobileCheckItems.vue'
@@ -38,6 +39,7 @@ const router = createRouter({
     { path: '/supplier-products', component: SupplierProductList, meta: { layout: 'desktop', platform: 'pc', requiresAuth: true } },
     { path: '/products', component: ProductList, meta: { layout: 'desktop', platform: 'pc', requiresAuth: true } },
     { path: '/products/category-management', component: ProductCategoryManagement, meta: { layout: 'desktop', platform: 'pc', requiresAuth: true } },
+    { path: '/purchase-recommendations', component: PurchaseRecommendationList, meta: { layout: 'desktop', platform: 'pc', requiresAuth: true, requiresAdmin: true } },
     { path: '/m/check', component: MobileCheckOrders, meta: { layout: 'mobile', platform: 'mobile', requiresAuth: true } },
     { path: '/m/check/:id', component: MobileCheckItems, props: true, meta: { layout: 'mobile', platform: 'mobile', requiresAuth: true } },
     { path: '/m/expiry', component: MobileExpiry, meta: { layout: 'mobile', platform: 'mobile', requiresAuth: true } },
@@ -55,6 +57,16 @@ router.beforeEach((to) => {
     : window.localStorage.getItem('access_token')
 
   if (!token) return platform === 'mobile' ? '/m/login' : '/login'
+
+  if (to.meta.requiresAdmin) {
+    try {
+      const user = JSON.parse(window.localStorage.getItem(platform === 'mobile' ? 'mobile_login_user' : 'login_user') || '{}')
+      if (user.role !== 'ADMIN') return '/receiving-orders'
+    } catch {
+      return '/receiving-orders'
+    }
+  }
+
   return true
 })
 

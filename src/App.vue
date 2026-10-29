@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { Menu, Calendar, List, UserFilled, Shop, Goods } from '@element-plus/icons-vue'
+import { Menu, Calendar, List, UserFilled, Shop, Goods, ShoppingCart } from '@element-plus/icons-vue'
 import { logout } from './api/auth'
 
 const route = useRoute()
@@ -56,6 +56,7 @@ function doLogout() {
         <el-menu-item v-if="role === 'ADMIN'" index="/suppliers"><el-icon><Shop /></el-icon><span>供应商管理</span></el-menu-item>
         <el-menu-item v-if="role === 'ADMIN'" index="/supplier-products"><el-icon><Goods /></el-icon><span>供应商商品</span></el-menu-item>
         <el-menu-item v-if="role === 'ADMIN'" index="/products"><el-icon><Goods /></el-icon><span>商品管理</span></el-menu-item>
+        <el-menu-item v-if="role === 'ADMIN'" index="/purchase-recommendations"><el-icon><ShoppingCart /></el-icon><span>订货管理</span></el-menu-item>
       </el-menu>
     </el-aside>
 
