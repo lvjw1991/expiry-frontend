@@ -383,15 +383,11 @@ onBeforeUnmount(() => {
             <label>其它店箱数</label>
             <div class="mobile-display-row"><span>{{ detailOtherBoxQty }}</span></div>
           </div>
-          <div v-if="detailOtherBoxQty > 0" class="mobile-check-field">
-            <label>备注</label>
-            <textarea v-model="form.remark" class="compact-input damage-remark" rows="3" maxlength="500"></textarea>
-          </div>
           <div class="mobile-check-field mobile-display-field">
             <label>Barcode <span class="required-star">*</span></label>
             <div class="mobile-display-row barcode-input-row">
               <input v-model="form.barcode" class="mobile-inline-value-input" placeholder="请输入或扫码" inputmode="numeric" />
-              <button style="padding-right: 20px;" type="button" class="mobile-icon-button" aria-label="扫码" @click="scannerRef?.open()"><FullScreen /></button>
+              <label class="mobile-icon-button" :for="scannerRef?.cameraInputId" aria-label="扫码"><FullScreen /></label>
             </div>
           </div>
 
@@ -446,7 +442,7 @@ onBeforeUnmount(() => {
             </div>
           </div>
 
-          <div v-if="form.status === 'FAIL' && detailOtherBoxQty <= 0" class="mobile-check-field">
+          <div v-if="form.status === 'FAIL' || !!form.remark.trim()" class="mobile-check-field">
             <label>备注</label>
             <textarea v-model="form.remark" class="compact-input damage-remark" rows="3" maxlength="500"></textarea>
           </div>
@@ -482,7 +478,7 @@ onBeforeUnmount(() => {
             <label>Barcode <span class="required-star">*</span></label>
             <div class="mobile-display-row barcode-input-row">
               <input v-model="createForm.barcode" class="mobile-inline-value-input" placeholder="请输入或扫码" inputmode="numeric" />
-              <button style="padding-right: 20px;" type="button" class="mobile-icon-button" aria-label="扫码" @click="createScannerRef?.open()"><FullScreen /></button>
+              <label class="mobile-icon-button" :for="createScannerRef?.cameraInputId" aria-label="扫码"><FullScreen /></label>
             </div>
           </div>
 

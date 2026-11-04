@@ -32,10 +32,6 @@ async function onScan(value: string) {
   await search()
 }
 
-function openScanner() {
-  scannerRef.value?.open()
-}
-
 function add() {
   const value = barcode.value.trim()
   router.push({ path: '/m/expiry', query: value ? { add: '1', barcode: value } : { add: '1' } })
@@ -54,7 +50,7 @@ function add() {
         <label class="mobile-search-label">Barcode</label>
         <div class="barcode-input-row">
           <input v-model="barcode" class="mobile-search-input" placeholder="请输入条形码" @keyup.enter="search" />
-          <button class="scan-button" @click="openScanner">📷</button>
+          <label class="scan-button" :for="scannerRef?.cameraInputId" aria-label="扫码">📷</label>
         </div>
         <div class="mobile-search-actions">
           <button class="primary" :disabled="loading" @click="search">{{ loading ? '查询中...' : '查询' }}</button>
@@ -86,7 +82,7 @@ function add() {
 .mobile-search-label { display:block; font-size:13px; font-weight:600; margin-bottom:7px; }
 .barcode-input-row { display:flex; gap:8px; align-items:center; }
 .barcode-input-row .mobile-search-input { flex:1; min-width:0; }
-.scan-button { width:48px; height:44px; flex:0 0 48px; border:1px solid #dcdfe6; border-radius:8px; background:#fff; font-size:20px; }
+.scan-button { display:flex; align-items:center; justify-content:center; box-sizing:border-box; width:48px; height:44px; flex:0 0 48px; border:1px solid #dcdfe6; border-radius:8px; background:#fff; font-size:20px; cursor:pointer; }
 .mobile-search-input { width:100%; height:44px; box-sizing:border-box; border:1px solid #dcdfe6; border-radius:8px; padding:0 12px; font-size:15px; outline:none; }
 .mobile-search-actions { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:12px; }
 .mobile-search-actions button { height:42px; border:1px solid #dcdfe6; border-radius:8px; background:#fff; font-size:14px; }

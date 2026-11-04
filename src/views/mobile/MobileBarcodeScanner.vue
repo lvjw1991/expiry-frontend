@@ -1,9 +1,11 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, ref, useId } from 'vue'
 
 const emit = defineEmits<{ scanned: [string] }>()
 
 const fileInput = ref<HTMLInputElement>()
+// 每个扫码组件实例使用独立 ID，供页面上的原生 label 直接触发相机 input。
+const cameraInputId = `mobile-camera-${useId()}`
 const galleryInput = ref<HTMLInputElement>()
 const manualMode = ref(false)
 const manualBarcode = ref('')
@@ -34,7 +36,7 @@ function openGallery() {
   manualMode.value = false
   galleryInput.value?.click()
 }
-defineExpose({ open, openGallery })
+defineExpose({ open, openGallery, cameraInputId })
 
 function rotateCanvas(src: HTMLCanvasElement, deg: number): HTMLCanvasElement {
   const out = document.createElement('canvas')
@@ -164,6 +166,11 @@ function dismiss() { error.value = ''; manualMode.value = false }
   </div>
 </div>
 
-<input ref="fileInput" type="file" accept="image/*" capture="environment" style="display:none" @change="onFileSelected" />
+<input :id="cameraInputId" ref="fileInput" class="scanner-camera-input" type="file" accept="image/*" capture="environment" @change="onFileSelected" />
 <input ref="galleryInput" type="file" accept="image/*" style="display:none" @change="onFileSelected" />
 </template>
+
+<style scoped>
+/* 不使用 display:none：三星浏览器对脚本 click 隐藏 input 的处理不一致。由外部 label 原生激活。 */
+.scanner-camera-input { position: fixed; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; opacity: 0; }
+</style>
