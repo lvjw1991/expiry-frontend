@@ -230,7 +230,7 @@ onMounted(() => {
       </el-form>
 
       <el-table :data="rows" v-loading="loading" stripe>
-        <el-table-column prop="barcode" label="Barcode" min-width="150"/>
+        <el-table-column label="Barcode" min-width="150"><template #default="{row}"><el-link v-if="row.barcode" type="primary" :underline="true" @click="router.push({ path: '/item-barcode-history', query: { barcode: row.barcode } })">{{row.barcode}}</el-link><span v-else>-</span></template></el-table-column>
         <el-table-column prop="expiryDate" label="有效期" width="130"/>
         <el-table-column prop="stock" label="库存" width="80"/>
         <el-table-column prop="category" label="类型" width="130"/>

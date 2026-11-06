@@ -1,11 +1,12 @@
 <script setup lang="ts">
 import { onMounted, reactive, ref } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { searchItemsByBarcode } from '../../api/itemHistory'
 import type { ItemBarcodeHistoryRow } from '../../api/itemHistory'
 
 const router = useRouter()
+const route = useRoute()
 const barcode = ref('')
 const loading = ref(false)
 const rows = ref<ItemBarcodeHistoryRow[]>([])
@@ -68,7 +69,14 @@ function statusType(value?: string) {
   if (value === 'FAIL' || value === 'CHECKING') return 'warning'
   return 'info'
 }
-onMounted(restoreState)
+onMounted(async () => {
+  restoreState()
+  const routeBarcode = typeof route.query.barcode === 'string' ? route.query.barcode.trim() : ''
+  if (routeBarcode) {
+    barcode.value = routeBarcode
+    await search()
+  }
+})
 </script>
 
 <template>
