@@ -33,3 +33,8 @@ export function getProductCategoryManagement(params: {
 export function batchUpdateProductCategory(body: { category: string; productIds: number[] }) {
   return http.patch<boolean>('/products/category/batch', body)
 }
+
+// 按商品 ID 获取完整商品信息（价签商品加入确认列表时使用）
+export function getProductById(id: number) {
+  return http.get<Product>(`/products/${id}`)
+}

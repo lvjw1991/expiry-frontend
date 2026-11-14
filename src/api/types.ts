@@ -1,5 +1,5 @@
 export interface Page<T> { list: T[]; total: number; pageNum: number; pageSize: number; totalPages: number; hasNext: boolean }
-export interface Product { id:number; name:string; barcode:string; imgUrl?:string; category?:string; status?:boolean; createdAt?:string; updatedAt?:string }
+export interface Product { id:number; name:string; barcode:string; imgUrl?:string; category?:string; salePrice?:number | null; nameFi?:string; netContent?:number | null; netUnit?:'KG'|'L'|string | null; status?:boolean; createdAt?:string; updatedAt?:string }
 export interface Supplier { id: number; supplierName: string; status?: boolean; createdAt?: string; updatedAt?: string }
 export interface SupplierProduct { id: number; supplierId?: number; supplierCode?: string; barcode?: string; status?: boolean; createdAt?: string; updatedAt?: string }
 export interface ReceivingOrder { id: number; supplierId: number; number?: number; receiveDate: string; progress: 'DRAFT'|'READY'|'CHECKING'|'COMPLETED'|string; temperature?: string; transport?: string; supplierName?: string }
