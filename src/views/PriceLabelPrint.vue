@@ -198,7 +198,7 @@ onMounted(() => { loadOrders() })
       <div v-for="(page, pageIndex) in printPages" :key="pageIndex" class="label-sheet">
         <article v-for="(tag, index) in page" :key="`${tag.barcode}-${index}`" class="price-label">
           <div class="label-product-image"><img v-if="tag.imgUrl" :src="resolveAssetUrl(tag.imgUrl)" /><span v-else> </span></div>
-          <div class="label-heading"><div class="label-names"><b>{{ tag.name }}</b><span>{{ tag.nameFi }}</span></div></div>
+          <div class="label-heading"><div class="label-names"><b>{{ tag.nameFi }}</b><b>{{ tag.name }}</b></div></div>
           <div class="label-price">
             <strong class="label-price-value">
               <span class="price-main">{{ getPriceMain(tag.salePrice) }}</span>
