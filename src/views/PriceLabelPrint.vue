@@ -132,7 +132,18 @@ function formatUnitPrice(tag: PriceTagVO) {
   if (tag.unitPrice == null || !Number.isFinite(Number(tag.unitPrice))) return ''
   return `${Number(tag.unitPrice).toFixed(2)} €/${tag.netUnit === 'L' ? 'L' : 'kg'}`
 }
-function formatPrice(price?: number) { return price == null ? '-' : `${Number(price).toFixed(2)}` }
+function getPriceCents(price?: number) {
+  if (price == null || !Number.isFinite(Number(price))) return '00'
+  const cents = Math.round(Math.abs(Number(price)) * 100) % 100
+  return String(cents).padStart(2, '0')
+}
+function getPriceMain(price?: number) {
+  if (price == null || !Number.isFinite(Number(price))) return '0'
+  const rounded = Math.round(Math.abs(Number(price)) * 100)
+  const whole = Math.floor(rounded / 100)
+  return `${Number(price) < 0 ? '-' : ''}${whole}`
+}
+function formatPrice(price?: number) { return price == null ? '-' : `€${Number(price).toFixed(2)}` }
 onMounted(() => { loadOrders() })
 </script>
 
@@ -188,7 +199,12 @@ onMounted(() => { loadOrders() })
         <article v-for="(tag, index) in page" :key="`${tag.barcode}-${index}`" class="price-label">
           <div class="label-product-image"><img v-if="tag.imgUrl" :src="resolveAssetUrl(tag.imgUrl)" /><span v-else> </span></div>
           <div class="label-heading"><div class="label-names"><b>{{ tag.name }}</b><span>{{ tag.nameFi }}</span></div></div>
-          <div class="label-price"><strong>{{ formatPrice(tag.salePrice) }}</strong></div>
+          <div class="label-price">
+            <strong class="label-price-value">
+              <span class="price-main">{{ getPriceMain(tag.salePrice) }}</span>
+              <span class="price-cents">{{ getPriceCents(tag.salePrice) }}</span>
+            </strong>
+          </div>
           <div class="label-footer">
             <div class="label-barcode"><BarcodeImage :value="tag.barcode" :height="25" :width="1.1" :font-size="8" /></div>
             <div class="label-unit-price">{{ formatUnitPrice(tag) }}</div>
@@ -219,15 +235,16 @@ onMounted(() => { loadOrders() })
 .price-label{width:80mm;height:40mm;border:1px solid #111;box-sizing:border-box;padding:0;display:grid;grid-template-columns:38% 62%;grid-template-rows:46% 31% 23%;overflow:hidden;color:#111;font-family:Arial,sans-serif;min-width:0}
 .label-product-image{grid-column:1;grid-row:1 / 4;height:100%;width:100%;min-width:0;min-height:0;display:flex;align-items:center;justify-content:center;overflow:hidden;padding:2mm;box-sizing:border-box}
 .label-product-image img{display:block;width:100%;height:100%;max-width:100%;max-height:100%;object-fit:contain;object-position:center}
-.label-heading{grid-column:2;grid-row:1;display:flex;align-items:center;justify-content:center;overflow:hidden;padding:1.5mm 2mm 1mm;box-sizing:border-box;border-bottom:0.2mm solid #ddd}
+.label-heading{grid-column:2;grid-row:1;display:flex;align-items:center;justify-content:center;overflow:hidden;padding:1.5mm 2mm 1mm;box-sizing:border-box;}
 .label-names{display:flex;flex-direction:column;gap:1mm;font-size:9pt;line-height:1.15;text-align:center;overflow:hidden;width:100%}
 .label-names b,.label-names span{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
-.label-price{grid-column:2;grid-row:2;display:flex;flex-direction:row;align-items:center;justify-content:center;gap:2mm;overflow:hidden;border-bottom:0.2mm solid #ddd}
-.label-price strong{font-size:29pt;line-height:1;font-weight:800;white-space:nowrap}
-.label-price span{font-size:9pt;font-weight:bold;align-self:center}
+.label-price{grid-column:2;grid-row:2;display:flex;align-items:center;justify-content:center;overflow:hidden;}
+.label-price-value{display:grid;grid-template-columns:auto 12mm;grid-template-rows:auto 1.2mm;column-gap:1mm;align-items:end;line-height:1;white-space:nowrap}
+.price-main{grid-column:1;grid-row:1 / 3;align-self:end;font-size:38pt;font-weight:800;line-height:.88}
+.price-cents{grid-column:2;grid-row:1;width:8mm;box-sizing:border-box;text-align:right;align-self:end;font-size:17pt;font-weight:800;line-height:1;border-bottom:2px solid #111;padding-bottom:1px}
 .label-footer{grid-column:2;grid-row:3;display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;justify-content:stretch;gap:1mm;min-width:0;padding:1mm 1.5mm;box-sizing:border-box}
-.label-barcode{width:100%;max-width:100%;min-width:0;overflow:hidden;display:flex;align-items:center;justify-content:center}
-.label-barcode svg{display:block;max-width:100%;height:auto}
+.label-barcode{width:100%;height:25px;max-width:100%;min-width:0;overflow:hidden;display:flex;align-items:center;justify-content:center}
+.label-barcode svg{display:block;width:100%;height:25px;max-width:100%;overflow:hidden}
 .label-unit-price{font-size:8pt;font-weight:bold;white-space:nowrap;text-align:center;padding:0 1mm}
 @page{size:A4 portrait;margin:0}
 @media print{
