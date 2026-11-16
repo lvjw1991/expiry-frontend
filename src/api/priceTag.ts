@@ -6,6 +6,7 @@ export interface PriceTagRequest {
   id: number
   name: string
   nameFi: string
+  imgUrl: string
   salePrice: number
   netContent?: number | null
   netUnit?: NetUnitType | null

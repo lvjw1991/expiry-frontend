@@ -27,7 +27,7 @@ const loadingTags = ref(false)
 const editVisible = ref(false)
 const saving = ref(false)
 const editProductId = ref<number>(0)
-const editForm = reactive({ name: '', nameFi: '', salePrice: 0 as number | undefined, netContent: undefined as number | undefined, netUnit: '' as ''|NetUnitType })
+const editForm = reactive({ name: '', nameFi: '', imgUrl: '', salePrice: 0 as number | undefined, netContent: undefined as number | undefined, netUnit: '' as ''|NetUnitType })
 const previewMode = ref(false)
 
 const selectedIds = computed(() => selectedProducts.value.map(p => p.id))
@@ -88,7 +88,7 @@ function removeProduct(id:number) { selectedProducts.value = selectedProducts.va
 function openEdit(product: Product) {
   editProductId.value = product.id
   Object.assign(editForm, {
-    name: product.name || '', nameFi: product.nameFi || '',
+    name: product.name || '', nameFi: product.nameFi || '', imgUrl: product.imgUrl || '',
     salePrice: product.salePrice == null ? undefined : Number(product.salePrice),
     netContent: product.netContent == null ? undefined : Number(product.netContent),
     netUnit: product.netUnit === 'KG' || product.netUnit === 'L' ? product.netUnit : ''
@@ -96,14 +96,14 @@ function openEdit(product: Product) {
   editVisible.value = true
 }
 async function saveEdit() {
-  if (!editForm.name.trim() || !editForm.nameFi.trim() || editForm.salePrice == null || !Number.isFinite(Number(editForm.salePrice))) {
-    return ElMessage.warning('英文名称、芬兰语名称和售价为必填项')
+  if (!editForm.name.trim() || !editForm.nameFi.trim() || !editForm.imgUrl.trim() || editForm.salePrice == null || !Number.isFinite(Number(editForm.salePrice))) {
+    return ElMessage.warning('英文名称、芬兰语名称、图片链接和售价为必填项')
   }
   if (editForm.netContent != null && Number(editForm.netContent) > 0 && !editForm.netUnit) return ElMessage.warning('填写净含量时，请选择 KG 或 L')
   if (editForm.netContent != null && Number(editForm.netContent) <= 0) return ElMessage.warning('净含量必须大于 0')
   saving.value = true
   const body: PriceTagRequest = {
-    id: editProductId.value, name: editForm.name.trim(), nameFi: editForm.nameFi.trim(), salePrice: Number(editForm.salePrice),
+    id: editProductId.value, name: editForm.name.trim(), nameFi: editForm.nameFi.trim(), imgUrl: editForm.imgUrl.trim(), salePrice: Number(editForm.salePrice),
     netContent: editForm.netContent == null || editForm.netContent === undefined ? null : Number(editForm.netContent),
     netUnit: editForm.netContent == null || editForm.netContent === undefined ? null : editForm.netUnit
   }
@@ -182,6 +182,7 @@ onMounted(() => { loadOrders() })
         <template #header><div class="card-header"><b>商品确认列表</b><span>每个商品打印一张价签</span></div></template>
         <el-empty v-if="!selectedProducts.length" description="请从上方选择商品或货单" />
         <el-table v-else :data="selectedProducts" stripe row-key="id">
+          <el-table-column label="图片" width="82"><template #default="{row}"><el-image v-if="row.imgUrl" :src="resolveAssetUrl(row.imgUrl)" fit="contain" :preview-src-list="[resolveAssetUrl(row.imgUrl)]" preview-teleported style="width:48px;height:48px" /><span v-else>-</span></template></el-table-column>
           <el-table-column prop="barcode" label="条形码" min-width="150" />
           <el-table-column prop="name" label="商品名称（英文）" min-width="210" />
           <el-table-column prop="nameFi" label="商品名称（芬兰语）" min-width="210"><template #default="{row}">{{ row.nameFi || '-' }}</template></el-table-column>
@@ -217,6 +218,7 @@ onMounted(() => { loadOrders() })
       <el-form label-width="125px">
         <el-form-item label="英文商品名称" required><el-input v-model="editForm.name" maxlength="255" /></el-form-item>
         <el-form-item label="芬兰语商品名称" required><el-input v-model="editForm.nameFi" maxlength="255" /></el-form-item>
+        <el-form-item label="图片链接" required><el-input v-model="editForm.imgUrl" type="textarea" :rows="2" placeholder="请输入商品图片 URL" /></el-form-item>
         <el-form-item label="售价 (€)" required><el-input-number v-model="editForm.salePrice" :min="0.01" :precision="2" :step="0.1" style="width:100%" /></el-form-item>
         <el-form-item label="净含量"><el-input-number v-model="editForm.netContent" :min="0.001" :precision="3" :step="0.1" :controls="false" style="width:180px" /><el-select v-model="editForm.netUnit" clearable placeholder="单位" style="width:110px;margin-left:10px"><el-option label="KG" value="KG"/><el-option label="L" value="L"/></el-select></el-form-item>
       </el-form>
