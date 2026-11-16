@@ -232,11 +232,11 @@ onMounted(() => { loadOrders() })
 .price-label-page .card-header span,.price-label-page .confirm-actions>span,.preview-toolbar>span{color:#909399;font-size:13px}
 .price-label-page .confirm-actions{justify-content:flex-end;padding-top:18px}
 .preview-toolbar{margin-bottom:14px}
-.label-sheet{width:210mm;height:297mm;padding:0;box-sizing:border-box;margin:0 auto 18px;background:#fff;display:grid;grid-template-columns:repeat(2,80mm);grid-template-rows:repeat(6,40mm);justify-content:center;align-content:center;gap:3mm;box-shadow:0 1px 8px #0002;break-after:page;page-break-after:always}
+.label-sheet{width:210mm;height:297mm;padding:0;box-sizing:border-box;margin:0 auto 18px;background:#fff;display:grid;grid-template-columns:repeat(2,85mm);grid-template-rows:repeat(6,40mm);justify-content:center;align-content:center;gap:3mm;box-shadow:0 1px 8px #0002;break-after:page;page-break-after:always}
 .label-sheet:last-child{break-after:auto;page-break-after:auto}
-.price-label{width:80mm;height:40mm;border:1px solid #111;box-sizing:border-box;padding:0;display:grid;grid-template-columns:38% 62%;grid-template-rows:46% 31% 23%;overflow:hidden;color:#111;font-family:Arial,sans-serif;min-width:0}
+.price-label{width:85mm;height:40mm;border: none;box-sizing:border-box;padding:0;display:grid;grid-template-columns:30% 70%;grid-template-rows:46% 31% 23%;overflow:hidden;color:#111;font-family:Arial,sans-serif;min-width:0}
 .label-product-image{grid-column:1;grid-row:1 / 4;height:100%;width:100%;min-width:0;min-height:0;display:flex;align-items:center;justify-content:center;overflow:hidden;padding:2mm;box-sizing:border-box}
-.label-product-image img{display:block;width:100%;height:100%;max-width:100%;max-height:100%;object-fit:contain;object-position:center}
+.label-product-image img{display:block;width:130%;height:130%;max-width:none;max-height:none;object-fit:contain;object-position:center}
 .label-heading{grid-column:2;grid-row:1;display:flex;align-items:center;justify-content:center;overflow:hidden;padding:1.5mm 2mm 1mm;box-sizing:border-box;}
 .label-names{display:flex;flex-direction:column;gap:1mm;font-size:9pt;line-height:1.15;text-align:center;overflow:hidden;width:100%}
 .label-names b,.label-names span{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
@@ -255,7 +255,7 @@ onMounted(() => { loadOrders() })
   .print-preview,.print-preview *{visibility:visible!important}
   .print-preview{position:absolute;left:0;top:0;width:100%}
   .no-print{display:none!important}
-  .label-sheet{width:210mm;height:297mm;margin:0;padding:0;box-shadow:none;gap:3mm;grid-template-columns:repeat(2,80mm);grid-template-rows:repeat(6,40mm);justify-content:center;align-content:center;break-after:page;page-break-after:always}
+  .label-sheet{width:210mm;height:297mm;margin:0;padding:0;box-shadow:none;gap:3mm;grid-template-columns:repeat(2,85mm);grid-template-rows:repeat(6,40mm);justify-content:center;align-content:center;break-after:page;page-break-after:always}
   .label-sheet:last-child{break-after:auto;page-break-after:auto}
   .price-label{-webkit-print-color-adjust:exact;print-color-adjust:exact}
 }
