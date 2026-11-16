@@ -174,7 +174,7 @@ async function saveEdit() {
   const body: PriceTagRequest = {
     id: editProductId.value, name: editForm.name.trim(), nameFi: editForm.nameFi.trim(), imgUrl: editForm.imgUrl.trim(), salePrice: Number(editForm.salePrice),
     netContent: editForm.netContent == null || editForm.netContent === undefined ? null : Number(editForm.netContent),
-    netUnit: editForm.netContent == null || editForm.netContent === undefined ? null : editForm.netUnit
+    netUnit: editForm.netContent == null ? null : (editForm.netUnit || null)
   }
   try {
     await updatePriceTag(editProductId.value, body)
