@@ -306,7 +306,7 @@ onMounted(() => { loadOrders() })
             </strong>
           </div>
           <div class="label-footer">
-            <div class="label-barcode"><BarcodeImage :value="tag.barcode" :height="25" :width="1.1" :font-size="8" /></div>
+            <div class="label-barcode"><BarcodeImage :value="tag.barcode" :height="25" :width="2" :font-size="8" /></div>
             <div class="label-unit-price">{{ formatUnitPrice(tag) }}</div>
           </div>
         </article>
