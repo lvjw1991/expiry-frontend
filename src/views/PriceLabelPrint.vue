@@ -1,29 +1,26 @@
 <script setup lang="ts">
-import { computed, onMounted, reactive, ref } from 'vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, reactive, ref } from 'vue'
 import { ElMessage } from 'element-plus'
-import { Search, Printer, Edit, Delete, Refresh, Plus } from '@element-plus/icons-vue'
-import { getAllProductsForTags, getPriceTagsByIds, getTagProductsByOrder, updatePriceTag } from '../api/priceTag'
+import { Printer, Edit, Delete, Refresh } from '@element-plus/icons-vue'
+import { getPriceTagsByIds, getTagProductsByOrder, updatePriceTag } from '../api/priceTag'
 import type { NetUnitType, PriceTagRequest, PriceTagVO } from '../api/priceTag'
 import { getReceivingOrders } from '../api/receivingOrder'
-import { getProductById } from '../api/product'
+import { getProductByBarcode } from '../api/product'
 import type { ReceivingOrder, Product } from '../api/types'
 import { resolveAssetUrl } from '../api/http'
 import BarcodeImage from '../components/BarcodeImage.vue'
 
 const activeMode = ref<'product'|'order'>('product')
-const keyword = ref('')
-const productRows = ref<Product[]>([])
-const productTotal = ref(0)
-const productPage = ref(0)
-const productPageSize = ref(10)
-const productLoading = ref(false)
+const barcodeInput = ref('')
+const barcodeInputRef = ref<any>()
+const barcodeLoading = ref(false)
+let barcodeDebounceTimer: ReturnType<typeof setTimeout> | undefined
+let lastSubmittedBarcode = ''
+let inFlightBarcode = ''
 const orders = ref<ReceivingOrder[]>([])
 const orderId = ref<number>()
 const orderLoading = ref(false)
 const selectedProducts = ref<Product[]>([])
-const addingProductIds = ref<number[]>([])
-// 搜索结果跨页保留勾选，只保存商品 ID，批量加入时再逐个获取完整详情
-const batchSelectedIds = ref<number[]>([])
 const tags = ref<PriceTagVO[]>([])
 const loadingTags = ref(false)
 const editVisible = ref(false)
@@ -33,105 +30,73 @@ const editForm = reactive({ name: '', nameFi: '', imgUrl: '', salePrice: 0 as nu
 const previewMode = ref(false)
 
 const selectedIds = computed(() => selectedProducts.value.map(p => p.id))
-const eligibleCurrentPageIds = computed(() => productRows.value
-  .filter(p => !selectedIds.value.includes(p.id) && !addingProductIds.value.includes(p.id))
-  .map(p => p.id))
-const selectedCurrentPageCount = computed(() => eligibleCurrentPageIds.value
-  .filter(id => batchSelectedIds.value.includes(id)).length)
-const currentPageAllSelected = computed(() => eligibleCurrentPageIds.value.length > 0
-  && selectedCurrentPageCount.value === eligibleCurrentPageIds.value.length)
-const currentPagePartiallySelected = computed(() => selectedCurrentPageCount.value > 0
-  && !currentPageAllSelected.value)
 const printPages = computed(() => {
   const pages: PriceTagVO[][] = []
   for (let i=0;i<tags.value.length;i+=12) pages.push(tags.value.slice(i,i+12))
   return pages
 })
 
-async function loadProducts() {
-  productLoading.value = true
+function focusBarcodeInput() {
+  nextTick(() => barcodeInputRef.value?.focus?.())
+}
+
+function scheduleBarcodeLookup(value: string) {
+  if (barcodeDebounceTimer) clearTimeout(barcodeDebounceTimer)
+  const barcode = value.trim()
+  if (!barcode) return
+  barcodeDebounceTimer = setTimeout(() => {
+    barcodeDebounceTimer = undefined
+    void lookupBarcode(barcode)
+  }, 500)
+}
+
+async function lookupBarcode(rawBarcode?: string) {
+  if (barcodeDebounceTimer) {
+    clearTimeout(barcodeDebounceTimer)
+    barcodeDebounceTimer = undefined
+  }
+  const barcode = (rawBarcode ?? barcodeInput.value).trim()
+  if (!barcode) return
+  if (barcodeLoading.value) {
+    if (barcode !== inFlightBarcode) scheduleBarcodeLookup(barcode)
+    return
+  }
+  if (barcode === lastSubmittedBarcode) return
+  lastSubmittedBarcode = barcode
+  inFlightBarcode = barcode
+  barcodeLoading.value = true
   try {
-    const result = await getAllProductsForTags({ pageNum: productPage.value, pageSize: productPageSize.value, keyword: keyword.value.trim() || undefined })
-    productRows.value = result.list || []
-    productTotal.value = result.total || 0
-  } catch (e:any) { ElMessage.error(e.message || '商品查询失败') }
-  finally { productLoading.value = false }
-}
-async function addProduct(row: Product) {
-  if (selectedIds.value.includes(row.id)) return ElMessage.info('商品已在打印列表中')
-  if (addingProductIds.value.includes(row.id)) return
-
-  addingProductIds.value = [...addingProductIds.value, row.id]
-  try {
-    // 加入确认列表前，按 ID 获取商品完整资料，避免使用分页搜索结果中的不完整字段
-    const detail = await getProductById(row.id)
-    if (selectedIds.value.includes(detail.id)) return ElMessage.info('商品已在打印列表中')
-    selectedProducts.value.push(detail)
-    ElMessage.success('已获取商品详情并加入打印列表')
-  } catch (e: any) {
-    ElMessage.error(e.message || '获取商品详情失败，未加入打印列表')
-  } finally {
-    addingProductIds.value = addingProductIds.value.filter(id => id !== row.id)
-  }
-}
-function toggleBatchProduct(row: Product, checked: boolean) {
-  if (selectedIds.value.includes(row.id) || addingProductIds.value.includes(row.id)) return
-  if (checked) {
-    if (!batchSelectedIds.value.includes(row.id)) batchSelectedIds.value.push(row.id)
-  } else {
-    batchSelectedIds.value = batchSelectedIds.value.filter(id => id !== row.id)
-  }
-}
-function toggleCurrentPage(checked: boolean) {
-  const currentIds = eligibleCurrentPageIds.value
-  if (checked) {
-    const merged = new Set([...batchSelectedIds.value, ...currentIds])
-    batchSelectedIds.value = Array.from(merged)
-  } else {
-    batchSelectedIds.value = batchSelectedIds.value.filter(id => !currentIds.includes(id))
-  }
-}
-async function addBatchProducts() {
-  const ids = batchSelectedIds.value.filter(id =>
-    !selectedIds.value.includes(id) && !addingProductIds.value.includes(id)
-  )
-  if (!ids.length) return ElMessage.info('请先勾选要加入的商品')
-
-  addingProductIds.value = Array.from(new Set([...addingProductIds.value, ...ids]))
-  const results = await Promise.all(ids.map(async id => {
-    try {
-      // 与单个加入保持一致：逐个调用商品详情接口，确保确认列表使用完整资料
-      const detail = await getProductById(id)
-      return { id, detail, error: null as unknown }
-    } catch (error) {
-      return { id, detail: null, error }
-    }
-  }))
-
-  const succeededIds: number[] = []
-  const failedIds: number[] = []
-  for (const result of results) {
-    if (result.detail && !selectedIds.value.includes(result.detail.id)) {
-      selectedProducts.value.push(result.detail)
-      succeededIds.push(result.id)
-    } else if (result.error) {
-      failedIds.push(result.id)
+    const product = await getProductByBarcode(barcode)
+    if (selectedIds.value.includes(product.id)) {
+      ElMessage.info('该商品已在确认列表中')
     } else {
-      succeededIds.push(result.id)
+      selectedProducts.value.push(product)
+      ElMessage.success(`已加入：${product.name || product.barcode}`)
     }
-  }
-
-  batchSelectedIds.value = batchSelectedIds.value.filter(id => !succeededIds.includes(id))
-  addingProductIds.value = addingProductIds.value.filter(id => !ids.includes(id))
-
-  if (succeededIds.length && !failedIds.length) {
-    ElMessage.success(`已获取完整商品资料并加入 ${succeededIds.length} 个商品`)
-  } else if (succeededIds.length && failedIds.length) {
-    ElMessage.warning(`成功加入 ${succeededIds.length} 个，${failedIds.length} 个获取详情失败；失败项仍保留勾选，可重试`)
-  } else {
-    ElMessage.error(`${failedIds.length} 个商品获取详情失败，仍保留勾选，可重试`)
+  } catch (e: any) {
+    ElMessage.error(e.message || `未找到条形码：${barcode}`)
+  } finally {
+    barcodeLoading.value = false
+    inFlightBarcode = ''
+    if (barcodeInput.value.trim() === barcode) barcodeInput.value = ''
+    lastSubmittedBarcode = ''
+    focusBarcodeInput()
   }
 }
+
+function onBarcodeInput(value: string) {
+  barcodeInput.value = value
+  scheduleBarcodeLookup(value)
+}
+
+function onBarcodeEnter() {
+  if (barcodeDebounceTimer) {
+    clearTimeout(barcodeDebounceTimer)
+    barcodeDebounceTimer = undefined
+  }
+  void lookupBarcode()
+}
+
 async function loadOrders() {
   orderLoading.value = true
   try {
@@ -213,7 +178,8 @@ function getPriceMain(price?: number) {
   return `${Number(price) < 0 ? '-' : ''}${whole}`
 }
 function formatPrice(price?: number) { return price == null ? '-' : `€${Number(price).toFixed(2)}` }
-onMounted(() => { loadOrders() })
+onMounted(() => { loadOrders(); focusBarcodeInput() })
+onBeforeUnmount(() => { if (barcodeDebounceTimer) clearTimeout(barcodeDebounceTimer) })
 </script>
 
 <template>
@@ -228,47 +194,21 @@ onMounted(() => { loadOrders() })
       <el-card shadow="never" class="no-print">
         <el-tabs v-model="activeMode">
           <el-tab-pane label="按商品打印" name="product">
-            <el-form inline @submit.prevent="productPage=0;loadProducts()">
-              <el-form-item label="商品搜索"><el-input v-model="keyword" clearable placeholder="商品名称或条形码" style="width:300px" @keyup.enter="productPage=0;loadProducts()" @clear="productPage=0;loadProducts()" /></el-form-item>
-              <el-form-item><el-button type="primary" :icon="Search" @click="productPage=0;loadProducts()">查询</el-button></el-form-item>
-            </el-form>
-            <div class="batch-toolbar">
-              <span>已勾选 {{ batchSelectedIds.length }} 个商品（翻页或重新搜索后仍会保留）</span>
-              <el-button type="primary" :icon="Plus" :disabled="!batchSelectedIds.length" :loading="addingProductIds.length > 0" @click="addBatchProducts">
-                批量加入（{{ batchSelectedIds.length }}）
-              </el-button>
+            <div class="barcode-entry">
+              <el-input
+                ref="barcodeInputRef"
+                :model-value="barcodeInput"
+                placeholder="请扫描或输入商品条形码"
+                clearable
+                autofocus
+                :loading="barcodeLoading"
+                @update:model-value="onBarcodeInput"
+                @keyup.enter="onBarcodeEnter"
+              >
+                <template #prepend>商品条形码</template>
+              </el-input>
+              <span class="barcode-entry-tip">扫码枪扫描后自动查询；手动输入停止约 0.5 秒后自动查询</span>
             </div>
-            <el-table :data="productRows" v-loading="productLoading" stripe row-key="id">
-              <el-table-column width="58" align="center">
-                <template #header>
-                  <el-checkbox
-                    :model-value="currentPageAllSelected"
-                    :indeterminate="currentPagePartiallySelected"
-                    :disabled="eligibleCurrentPageIds.length === 0"
-                    @change="(checked:boolean) => toggleCurrentPage(checked)"
-                  />
-                </template>
-                <template #default="{row}">
-                  <el-checkbox
-                    :model-value="batchSelectedIds.includes(row.id)"
-                    :disabled="selectedIds.includes(row.id) || addingProductIds.includes(row.id)"
-                    @change="(checked:boolean) => toggleBatchProduct(row, checked)"
-                  />
-                </template>
-              </el-table-column>
-              <el-table-column prop="barcode" label="条形码" min-width="150" />
-              <el-table-column label="图片" width="82"><template #default="{row}"><el-image v-if="row.imgUrl" :src="resolveAssetUrl(row.imgUrl)" fit="cover" style="width:48px;height:48px" /><span v-else>-</span></template></el-table-column>
-              <el-table-column prop="name" label="商品名称" min-width="220" />
-              <el-table-column label="状态" width="110" fixed="right">
-                <template #default="{row}">
-                  <el-tag v-if="selectedIds.includes(row.id)" type="success">已加入</el-tag>
-                  <el-tag v-else-if="addingProductIds.includes(row.id)" type="warning">加入中</el-tag>
-                  <span v-else-if="batchSelectedIds.includes(row.id)">已勾选</span>
-                  <span v-else class="muted-status">未选择</span>
-                </template>
-              </el-table-column>
-            </el-table>
-            <div class="pagination"><el-pagination :current-page="productPage+1" :page-size="productPageSize" :total="productTotal" layout="total,sizes,prev,pager,next,jumper" :page-sizes="[10,20,50,100]" @current-change="(p:number)=>{productPage=p-1;loadProducts()}" @size-change="(s:number)=>{productPageSize=s;productPage=0;loadProducts()}" /></div>
           </el-tab-pane>
           <el-tab-pane label="按货单打印" name="order">
             <el-form inline><el-form-item label="选择货单"><el-select v-model="orderId" filterable placeholder="请选择货单" style="width:360px" :loading="orderLoading"><el-option v-for="o in orders" :key="o.id" :label="`#${o.id} · ${o.supplierName || '供应商'} · ${o.receiveDate || ''}`" :value="o.id" /></el-select></el-form-item><el-form-item><el-button type="primary" :loading="orderLoading" @click="addOrderProducts">加入货单商品</el-button></el-form-item></el-form>
@@ -279,7 +219,7 @@ onMounted(() => { loadOrders() })
 
       <el-card shadow="never" style="margin-top:16px" class="no-print">
         <template #header><div class="card-header"><b>商品确认列表</b><span>每个商品打印一张价签</span></div></template>
-        <el-empty v-if="!selectedProducts.length" description="请从上方选择商品或货单" />
+        <el-empty v-if="!selectedProducts.length" description="请扫描商品条形码或从货单添加商品" />
         <el-table v-else :data="selectedProducts" stripe row-key="id">
           <el-table-column label="图片" width="82"><template #default="{row}"><el-image v-if="row.imgUrl" :src="resolveAssetUrl(row.imgUrl)" fit="contain" :preview-src-list="[resolveAssetUrl(row.imgUrl)]" preview-teleported style="width:48px;height:48px" /><span v-else>-</span></template></el-table-column>
           <el-table-column prop="barcode" label="条形码" min-width="150" />
@@ -330,15 +270,13 @@ onMounted(() => { loadOrders() })
 .price-label-page .card-header,.price-label-page .confirm-actions,.price-label-page .preview-toolbar{display:flex;align-items:center;justify-content:space-between;gap:12px}
 .price-label-page .card-header span,.price-label-page .confirm-actions>span,.preview-toolbar>span{color:#909399;font-size:13px}
 .price-label-page .confirm-actions{justify-content:flex-end;padding-top:18px}
-.batch-toolbar{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:4px 0 12px;color:#606266;font-size:13px}
 .muted-status{color:#a8abb2}
-@media(max-width:768px){.batch-toolbar{align-items:flex-start;flex-direction:column}}
 .preview-toolbar{margin-bottom:14px}
 .label-sheet{width:210mm;height:297mm;padding:0;box-sizing:border-box;margin:0 auto 18px;background:#fff;display:grid;grid-template-columns:repeat(2,85mm);grid-template-rows:repeat(6,40mm);justify-content:center;align-content:center;gap:3mm;box-shadow:0 1px 8px #0002;break-after:page;page-break-after:always}
 .label-sheet:last-child{break-after:auto;page-break-after:auto}
 .price-label{width:85mm;height:40mm;border: none;box-sizing:border-box;padding:0;display:grid;grid-template-columns:30% 70%;grid-template-rows:46% 31% 23%;overflow:hidden;color:#111;font-family:Arial,sans-serif;min-width:0}
 .label-product-image{grid-column:1;grid-row:1 / 4;height:100%;width:100%;min-width:0;min-height:0;display:flex;align-items:center;justify-content:center;overflow:hidden;padding:2mm;box-sizing:border-box}
-.label-product-image img{display:block;width:130%;height:130%;max-width:none;max-height:none;object-fit:contain;object-position:center}
+.label-product-image img{display:block;width:160%;height:160%;max-width:none;max-height:none;object-fit:contain;object-position:center}
 .label-heading{grid-column:2;grid-row:1;display:flex;align-items:center;justify-content:center;overflow:hidden;padding:1.5mm 2mm 1mm;box-sizing:border-box;}
 .label-names{display:flex;flex-direction:column;gap:1mm;font-size:9pt;line-height:1.15;text-align:center;overflow:hidden;width:100%}
 .label-names b,.label-names span{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}

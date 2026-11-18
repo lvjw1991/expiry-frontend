@@ -38,3 +38,8 @@ export function batchUpdateProductCategory(body: { category: string; productIds:
 export function getProductById(id: number) {
   return http.get<Product>(`/products/${id}`)
 }
+
+// 按条形码查询商品（价签打印扫码入口）
+export function getProductByBarcode(barcode: string) {
+  return http.get<Product>('/products/by-barcode', { barcode })
+}
